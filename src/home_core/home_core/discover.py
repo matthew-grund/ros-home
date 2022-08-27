@@ -23,8 +23,8 @@ class DeviceDiscoverer(Node):
     def __init__(self):
         super().__init__('home_discover')
         self.publisher_devices = self.create_publisher(String, 'devices', 10)
-        timer_period = 17.0  # seconds
-        self.timer = self.create_timer(timer_period, self.timer_callback)
+        self.timer_period = 17.0  # seconds
+        self.timer = self.create_timer(self.timer_period, self.timer_callback)
         self.JSON_HEADERS = {'Content-type': 'application/json', 'Accept': 'text/plain'}
         self.i = 0
         self.devices=[]
@@ -43,7 +43,11 @@ class DeviceDiscoverer(Node):
     def timer_callback(self):
         self.devices = self.discover_home()
         msg = String()
-        msg.data = json.dumps(self.devices)
+        m = {}
+        m['index'] = self.i
+        m['interval'] = self.timer_period
+        m['payload'] = self.devices
+        msg.data = json.dumps(m)
         self.publisher_devices.publish(msg)
         self.get_logger().info('Publishing: "%s"' % msg.data)
         self.i += 1

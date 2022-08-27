@@ -4,6 +4,7 @@
 # you may not use this file except in compliance with the License.
 #
 
+from cmath import nan
 from distutils.log import set_verbosity
 import rclpy
 from rclpy.node import Node
@@ -51,7 +52,8 @@ class EventDetector(Node):
         timer_period = 10.0  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
-
+        self.dev_index = 0
+        self.event_index = 0
         self.publisher_devices = self.create_publisher(String, 'known_devices', 10)
 
     def timer_callback(self):
@@ -59,13 +61,17 @@ class EventDetector(Node):
     
     def publish_event(self, typename, severity, desc, detail):
         msg = String()
-        out = {}
-        out['event_type'] = typename
-        out['severity'] = severity
-        out['timestamp'] = datetime.datetime.utcnow().isoformat()
-        out['description'] = desc
-        out['detail'] = detail
-        msg.data = json.dumps(out)
+        event = {}
+        event['event_type'] = typename
+        event['severity'] = severity
+        event['timestamp'] = datetime.datetime.utcnow().isoformat()
+        event['description'] = desc
+        event['detail'] = detail
+        m = {}
+        m['index'] = self.event_index
+        m['interval'] = nan
+        m['payload'] = event
+        msg.data = json.dumps(m)
         self.publisher_events.publish(msg)
         if severity=='ERROR':
             self.get_logger().error(desc)
@@ -73,23 +79,40 @@ class EventDetector(Node):
             self.get_logger().warn(desc)
         else:
             self.get_logger().info(desc)
+        self.event_index += 1    
 
     def publish_known_devices(self):
         msg = String()
-        msg.data = json.dumps(self.known_devices)
+        msgdict = {}
+        msgdict['index'] = self.i
+        msgdict['interval'] = self.device_interval
+        msgdict['payload'] = self.known_devices
+        msg.data = json.dumps(msgdict)
         self.publisher_devices.publish(msg)
         self.get_logger().info('Publishing known devices list: %d devices' % len(self.known_devices))
 
     def devices_callback(self, msg):
-        # self.get_logger().info('Devices: "%s"' % msg.data)
-        self.new_devices = json.loads(msg.data)
+        m = json.loads(msg.data)
+        self.device_interval = m['interval']
+        self.new_devices = m['payload']
+        if m['index'] == 0:
+            self.publish_event('DEV','ERROR','Device discovery node restarted',self.new_devices)
         self.detect_device_event()
 
     def occupancy_callback(self, msg):
         self.get_logger().info('Occupants: "%s"' % msg.data)
 
     def sun_callback(self, msg):
-        self.get_logger().info('Sun: "%s"' % msg.data)
+        m = msg.data
+        max_sec = m['interval']
+        sun = m['payload']
+        if m['index'] == 0:
+            self.publish_event('SUN','ERROR','Sun tracker node restarted',sun)
+        rem_hours = sun['secs_remaining'] / 3600.0
+        event = sun['next_event']    
+        self.get_logger().info('Sun: %.1f hours until %s' % (rem_hours,event))
+        if sun['secs_remaining'] <= max_sec:
+            self.publish_event('SUN','INFO','%s'% event,sun)
 
     def wx_callback(self, msg):
         self.get_logger().info('Weather: "%s"' % msg.data)

@@ -19,8 +19,8 @@ class SunTracker(Node):
     def __init__(self):
         super().__init__('sun_tracker')
         self.publisher_ = self.create_publisher(String, 'sun', 10)
-        timer_period = 10.0  # seconds
-        self.timer = self.create_timer(timer_period, self.timer_callback)
+        self.timer_period = 10.0  # seconds
+        self.timer = self.create_timer(self.timer_period, self.timer_callback)
         self.i = 0
         self.city = "Mashpee"
         self.state = "Massachusetts"
@@ -32,15 +32,19 @@ class SunTracker(Node):
 
     def timer_callback(self):
         self.update_sun_track()
-        sundict={}
+        sundict = {}
         sundict['next_event'] = self.next_event
         sundict['prev_event'] = self.prev_event
         sundict['secs_remaining'] = self.secs_remaining
         sundict['secs_elapsed'] = self.secs_elapsed
         sundict['events'] = self.sun_event
-        sunjson = json.dumps(sundict)
+        msgdict = {}
+        msgdict['index'] = self.i
+        msgdict['interval'] = self.timer_period
+        msgdict['payload'] = sundict
+        msgjson = json.dumps(msgdict)
         msg = String()
-        msg.data = sunjson
+        msg.data = msgjson
         self.publisher_.publish(msg)
         self.get_logger().info('Sun: "%s"' % msg.data)
         self.i += 1
