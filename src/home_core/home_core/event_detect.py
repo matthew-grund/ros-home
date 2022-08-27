@@ -103,7 +103,7 @@ class EventDetector(Node):
         self.get_logger().info('Occupants: "%s"' % msg.data)
 
     def sun_callback(self, msg):
-        m = msg.data
+        m = json.loads(msg.data)
         max_sec = m['interval']
         sun = m['payload']
         if m['index'] == 0:
