@@ -42,13 +42,13 @@ class EventDetector(Node):
 
         self.subscription_wx = self.create_subscription(
             String,
-            'forecast',
+            'weather',
             self.wx_callback,
             10)
         self.subscription_wx  # prevent unused variable warning
 
         self.publisher_events = self.create_publisher(String, 'events', 10)
-
+        self.period_name = ""
         timer_period = 10.0  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
@@ -115,7 +115,17 @@ class EventDetector(Node):
             self.publish_event('SUN','INFO','%s'% event,sun)
 
     def wx_callback(self, msg):
-        self.get_logger().info('Weather: "%s"' % msg.data)
+        m = json.loads(msg.data)
+        max_sec = m['interval']
+        wx = m['payload']
+        if m['index'] == 0:
+            self.publish_event('WEATHER','ERROR','Weather tracker node restarted',wx)
+            self.period_name = ""
+        if self.period_name != wx[0]['name']:
+            self.publish_event('WEATHER','INFO','NEW FORECAST: %s - %s'% (wx[0]['name'],wx[0]['detailedForecast']),wx)
+            self.period_name = wx[0]['name']
+        else:
+            self.get_logger().info('Weather: %s - %s' % (wx[0]['name'],wx[0]['detailedForecast']))
 
     def detect_device_event(self):
         known_len = len(self.known_devices)
