@@ -89,7 +89,7 @@ class EventDetector(Node):
         msgdict['payload'] = self.known_devices
         msg.data = json.dumps(msgdict)
         self.publisher_devices.publish(msg)
-        self.get_logger().info('Publishing known devices list: %d devices' % len(self.known_devices))
+        self.get_logger().info('Devices: Publishing known devices list: %d devices' % len(self.known_devices))
 
     def devices_callback(self, msg):
         m = json.loads(msg.data)
