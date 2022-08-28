@@ -152,8 +152,12 @@ class DeviceDiscoverer(Node):
         try:    
             req = requests.get(get_url, headers=self.JSON_HEADERS, timeout=15.0)
         except:
-            req = {'name':'Unknown'}    
-        eureka = json.loads(req.text)
+            req.status_code = 404
+            req.text = ""
+        if req.status_code == 200:    
+            eureka = json.loads(req.text)
+        else:
+            eureka = {}    
         return eureka
 
     def fetch_yamaha_config(self, ip):
@@ -256,10 +260,11 @@ class DeviceDiscoverer(Node):
     def identify_google_device(self, device):    
         device['type'] = 'Google Chromecast Device'
         eureka = self.fetch_google_config(device['ip'])
-        device['name'] = eureka['name']
+        if len(eureka):
+            device['name'] = eureka['name']
+            device['vendor_config'] = eureka 
         device['has_bluetooth'] = True
         device['model'] = 'Unknown'
-        device['vendor_config'] = eureka  
         return device
 
     def identify_microsoft_device(self, device):
