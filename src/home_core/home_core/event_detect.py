@@ -60,8 +60,6 @@ class EventDetector(Node):
             self.wx_alerts_callback,
             10)
         self.subscription_wx_alerts # prevent unused variable warning
- 
-
 
         self.publisher_events = self.create_publisher(String, 'events', 10)
         self.period_name = ""
