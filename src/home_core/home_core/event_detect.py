@@ -40,15 +40,32 @@ class EventDetector(Node):
             10)
         self.subscription_sun  # prevent unused variable warning
 
-        self.subscription_wx = self.create_subscription(
+        self.subscription_forecast = self.create_subscription(
             String,
-            'weather',
-            self.wx_callback,
+            'wx_forecast',
+            self.forecast_callback,
             10)
-        self.subscription_wx  # prevent unused variable warning
+        self.subscription_forecast  # prevent unused variable warning
+
+        self.subscription_conditions = self.create_subscription(
+            String,
+            'wx_conditions',
+            self.conditions_callback,
+            10)
+        self.subscription_conditions  # prevent unused variable warning
+
+        self.subscription_wx_alerts = self.create_subscription(
+            String,
+            'wx_alerts',
+            self.wx_alerts_callback,
+            10)
+        self.subscription_wx_alerts # prevent unused variable warning
+ 
+
 
         self.publisher_events = self.create_publisher(String, 'events', 10)
         self.period_name = ""
+        self.conditions_time = ""
         timer_period = 10.0  # seconds
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.i = 0
@@ -114,18 +131,33 @@ class EventDetector(Node):
         if sun['secs_remaining'] <= max_sec:
             self.publish_event('SUN','INFO','%s'% event,sun)
 
-    def wx_callback(self, msg):
+    def forecast_callback(self, msg):
         m = json.loads(msg.data)
         max_sec = m['interval']
         wx = m['payload']
         if m['index'] == 0:
-            self.publish_event('WEATHER','ERROR','Weather tracker node restarted',wx)
+            self.publish_event('FORECAST','ERROR','Weather tracker node restarted',wx)
             self.period_name = ""
         if self.period_name != wx[0]['name']:
-            self.publish_event('WEATHER','INFO','NEW FORECAST: %s - %s'% (wx[0]['name'],wx[0]['detailedForecast']),wx)
+            self.publish_event('FORECAST','INFO','NEW FORECAST: %s - %s'% (wx[0]['name'],wx[0]['detailedForecast']),wx)
             self.period_name = wx[0]['name']
         else:
-            self.get_logger().info('Weather: %s - %s' % (wx[0]['name'],wx[0]['detailedForecast']))
+            self.get_logger().info('Forecast: %s - %s' % (wx[0]['name'],wx[0]['detailedForecast']))
+
+    def conditions_callback(self, msg):
+        m = json.loads(msg.data)
+        wx = m['payload']
+        if self.conditions_time != wx['timestamp']:
+            self.publish_event('CONDITIONS','INFO','NEW OBSERVATION: %s - %.1fF' % (wx['textDescription'],wx['temperature']['value']*9/5+32),wx)
+            self.conditions_time = wx['timestamp']
+        else:
+            self.get_logger().info('Conditions: %s - %.1fF' % (wx['textDescription'],wx['temperature']['value']*9/5+32))
+
+    def wx_alerts_callback(self, msg):
+        m = json.loads(msg.data)
+        wx = m['payload']
+        #self.publish_event('WEATHER','INFO','NEW ALERT: %s - %.1fF'% (wx['textDescription'],wx['temperature']['value']*9/5+32),wx)
+        self.get_logger().info('Alert: %s' % msg.data)
 
     def detect_device_event(self):
         known_len = len(self.known_devices)
