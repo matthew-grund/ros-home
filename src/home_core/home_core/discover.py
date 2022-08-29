@@ -152,8 +152,7 @@ class DeviceDiscoverer(Node):
         try:    
             req = requests.get(get_url, headers=self.JSON_HEADERS, timeout=15.0)
         except:
-            req.status_code = 404
-            req.text = ""
+            return {}
         if req.status_code == 200:    
             eureka = json.loads(req.text)
         else:
