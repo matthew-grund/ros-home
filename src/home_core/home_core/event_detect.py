@@ -146,10 +146,17 @@ class EventDetector(Node):
         m = json.loads(msg.data)
         wx = m['payload']
         if self.conditions_time != wx['timestamp']:
-            self.publish_event('CONDITIONS','INFO','NEW OBSERVATION: %s - %.1fF' % (wx['textDescription'],wx['temperature']['value']*9/5+32),wx)
+            if (type(wx['temperature']['value']) == int) or (type(wx['temperature']['value']) == float):
+                self.publish_event('CONDITIONS','INFO','NEW OBSERVATION: %s - %.1fF' % (wx['textDescription'],wx['temperature']['value']*9/5+32),wx)
+            else:
+                self.publish_event('CONDITIONS','INFO','NEW OBSERVATION: %s - %s (weird temp)' % (wx['textDescription'],wx['temperature']['value']),wx)
             self.conditions_time = wx['timestamp']
         else:
-            self.get_logger().info('Conditions: %s - %.1fF' % (wx['textDescription'],wx['temperature']['value']*9/5+32))
+            if wx['temperature']['value']:
+                if (type(wx['temperature']['value']) == int) or (type(wx['temperature']['value']) == float):
+                    self.get_logger().info('Conditions: %s - %.1fF' % (wx['textDescription'],wx['temperature']['value']*9/5+32))
+                else:
+                    self.get_logger().warning('Conditions: %s - %s (weird temp)' % (wx['textDescription'],wx['temperature']['value']))
 
     def wx_alerts_callback(self, msg):
         m = json.loads(msg.data)

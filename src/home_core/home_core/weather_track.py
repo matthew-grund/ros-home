@@ -62,7 +62,7 @@ class WeatherTracker(Node):
                 return
             if result.status_code == 200:
                 res = json.loads(result.text)
-                observations = res['features'][0]['properties']
+                observations = res['features'][0]['properties']['periods'][0]   # just the current observation
                 m = {}
                 m['index'] = self.i
                 m['interval'] = self.timer_period

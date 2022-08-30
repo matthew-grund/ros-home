@@ -5,33 +5,39 @@
 #
 import rclpy
 from rclpy.node import Node
-
 from std_msgs.msg import String
+from std_msgs.msg import Float32
 
-
-class HomeCommander(Node):
+class HomeObserver(Node):
 
     def __init__(self):
-        super().__init__('home_commander')
-        self.subscription = self.create_subscription(
-            String,
-            'topic',
-            self.listener_callback,
-            10)
-        self.subscription  # prevent unused variable warning
+        super().__init__('home_observer')
+        # measurements
+        self.wx_temperature_c = []
+        self.wx_wind_speed_kph = []
+        self.wx_wind_dir_from_degrees = []
+        self.wx_humidity_percent = []
 
-    def listener_callback(self, msg):
+        # subscribe to curent conditions
+        self.wx_cond_sub = self.create_subscription(
+            String,
+            'wx_conditions',
+            self.wx_cond_callback,
+            10)
+        self.wx_cond_sub  # prevent unused variable warning
+
+    def wx_cond_callback(self, msg):
         self.get_logger().info('I heard: "%s"' % msg.data)
 
 
 def main(args=None):
     rclpy.init(args=args)
 
-    home_commander = HomeCommander()
+    home_observer = HomeObserver()
 
-    rclpy.spin(home_commander)
+    rclpy.spin(home_observer)
 
-    home_commander.destroy_node()
+    home_observer.destroy_node()
     rclpy.shutdown()
 
 

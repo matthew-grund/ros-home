@@ -3,7 +3,7 @@
 <package format="3">
   <name>home_core</name>
   <version>0.0.0</version>
-  <description>Home_core provides home device discovery and simple control</description>
+  <description>Home_core provides home device discovery, environmental observation, scene control, and notification</description>
   <maintainer email="matthew.grund77@gmail.com">Matthew Grund</maintainer>
   <license>BSD-2-clause</license>
 
