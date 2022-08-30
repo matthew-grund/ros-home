@@ -89,6 +89,8 @@ class WeatherTracker(Node):
                 msg.data = json.dumps(m)
                 self.publisher_wx.publish(msg)
                 self.get_logger().info('Forecast: "%s"' % forecast[0]['detailedForecast'])
+                self.get_logger().info('Forecast: "%s"' % forecast[1]['detailedForecast'])
+                self.get_logger().info('Forecast: "%s"' % forecast[2]['detailedForecast'])
                 self.i += 1
 
 def main(args=None):

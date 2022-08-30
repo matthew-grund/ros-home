@@ -69,7 +69,7 @@ class EventDetector(Node):
         self.i = 0
         self.dev_index = 0
         self.event_index = 0
-        self.publisher_devices = self.create_publisher(String, 'known_devices', 10)
+        self.publisher_devices = self.create_publisher(String, 'known_net_devices', 10)
 
     def timer_callback(self):
         self.i += 1
@@ -129,7 +129,7 @@ class EventDetector(Node):
         if sun['secs_remaining'] <= max_sec:
             self.publish_event('SUN','INFO','%s'% event,sun)
 
-    def forecast_callback(self, msg):
+    def forecast_callback(self, msg): 
         m = json.loads(msg.data)
         max_sec = m['interval']
         wx = m['payload']
@@ -168,7 +168,7 @@ class EventDetector(Node):
         known_len = len(self.known_devices)
         new_len = len(self.new_devices)
         if known_len == 0:
-            self.publish_event('DEV','INFO','Discovered %d NEW devices' % new_len,self.new_devices)
+            self.publish_event('DEV','INFO','Devices: %d NEW devices' % new_len,self.new_devices)
         for d in self.new_devices:
             dev_is_new = True
             for kd in self.known_devices:
@@ -182,7 +182,7 @@ class EventDetector(Node):
                 d['times_missed'] = 0
                 d['last_seen'] = datetime.datetime.utcnow().isoformat()
                 self.known_devices.append(d)
-                self.publish_event('DEV','INFO','Discovered NEW device: %s@%s' % (d['name'],d['ip']),d)
+                self.publish_event('DEV','INFO','Devices: NEW device: %s@%s' % (d['name'],d['ip']),d)
         # check if a known device is missing from the lastest scan        
         for kd in self.known_devices:
             dev_is_lost = True
@@ -191,7 +191,7 @@ class EventDetector(Node):
                     dev_is_lost = False
             if dev_is_lost:
                 kd['times_missed'] = kd['times_missed'] + 1
-                self.publish_event('DEV','WARNING','Missed known device: %s@%s last seen %s' % (kd['name'],kd['ip'],kd['last_seen']),kd)
+                self.publish_event('DEV','WARNING','Devices: Missed known device: %s@%s last seen %s' % (kd['name'],kd['ip'],kd['last_seen']),kd)
         # share the master list        
         self.publish_known_devices()
 
