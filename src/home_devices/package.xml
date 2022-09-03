@@ -3,8 +3,8 @@
 <package format="3">
   <name>home_devices</name>
   <version>0.0.0</version>
-  <description>Home_devices provides a library of ros node interfaces to home devices</description>
-  <maintainer email="matthew.grund77@gmail.com">Matthew Grund</maintainer>
+  <description>Home devices provides ROS2 node interfaces to home devices</description>
+  <maintainer email="matthew.grund77@gmail.com">matt</maintainer>
   <license>BSD-2-clause</license>
 
   <exec_depend>rclpy</exec_depend>

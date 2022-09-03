@@ -62,7 +62,7 @@ class WeatherTracker(Node):
                 return
             if result.status_code == 200:
                 res = json.loads(result.text)
-                observations = res['features'][0]['properties']['periods'][0]   # just the current observation
+                observations = res['features'][0]['properties']   # just the current observation
                 m = {}
                 m['index'] = self.i
                 m['interval'] = self.timer_period
@@ -70,7 +70,11 @@ class WeatherTracker(Node):
                 msg = String()
                 msg.data = json.dumps(m)
                 self.publisher_conditions.publish(msg)
-                self.get_logger().info('Current: "%s" %.1f F' % (observations['textDescription'],observations['temperature']['value']/5*9+32))
+                if (type(observations['temperature']['value']) == int) or \
+                    (type(observations['temperature']['value']) == int):
+                    self.get_logger().info('Current: "%s" %.1f F' % (observations['textDescription'],observations['temperature']['value']/5*9+32))
+                else:
+                    self.get_logger().info('Current: "%s" (NULL temp)' % observations['textDescription'])
                 self.i += 1
 
             # forecast
