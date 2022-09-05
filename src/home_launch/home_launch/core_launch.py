@@ -28,11 +28,17 @@ def generate_launch_description():
         package="home_core",
         executable="sms"
     )
- 
+
+    config_node = Node(
+        package="home_core",
+        executable="config"
+    )
+
     ld.add_action(discovery_node)
     ld.add_action(weather_node)
     ld.add_action(sun_node)
     ld.add_action(event_node)
     ld.add_action(sms_node)
+    ld.add_action(config_node)
 
     return ld

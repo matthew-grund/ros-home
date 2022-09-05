@@ -20,16 +20,17 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'netdisco = home_core.net_discover:main',
-            'event = home_core.event_detect:main',
             'command = home_core.command:main',
-            'sun = home_core.sun_track:main',
-            'schedule = home_core.schedule:main',
-            'scene = home_core.scene_execute:main',
-            'occupancy = home_core.occupancy_track:main',
-            'weather = home_core.weather_track:main',
+            'config = home_core.file_configure:main',
+            'event = home_core.event_detect:main',
+            'netdisco = home_core.net_discover:main',
             'observe = home_core.observe:main',
-            'sms = home_core.sms_message:main'
+            'occupancy = home_core.occupancy_track:main',
+            'scene = home_core.scene_execute:main',
+            'schedule = home_core.schedule:main',
+            'sun = home_core.sun_track:main',
+            'sms = home_core.sms_message:main',
+            'weather = home_core.weather_track:main'
         ],
     },
 )      

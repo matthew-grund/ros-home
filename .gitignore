@@ -8,6 +8,11 @@ src/*/install/
 # ignore runtime data
 log/
 src/log/
-src/*/*/__pycache__/
+__pycache__/
+src/home_devices/home_devices/__pycache__/
+src/home_extras/home_extras/__pycache__/
+src/home_core/home_core/__pycache__/
+src/home_launch/home_launch/__pycache__/
+
 # ignore misc editor crud
 *~
