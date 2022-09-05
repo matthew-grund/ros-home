@@ -4,7 +4,7 @@
   <name>home_devices</name>
   <version>0.0.0</version>
   <description>Home devices provides ROS2 node interfaces to home devices</description>
-  <maintainer email="matthew.grund77@gmail.com">matt</maintainer>
+  <maintainer email="matthew.grund77@gmail.com">Matthew Grund</maintainer>
   <license>BSD-2-clause</license>
 
   <exec_depend>rclpy</exec_depend>

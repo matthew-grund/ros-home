@@ -13,14 +13,14 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='matt',
+    maintainer='Matthew Grund',
     maintainer_email='"matthew.grund77@gmail.com"',
     description='Home_extras provides extra miscellaneous ROS2 node interfaces',
     license='BSD-2-clause',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'event = home_extras.event_detect:main'
+            'xevent = home_extras.extra_event_detect:main'
             'stocks = home_extras.stock_track:main',
             'tides = home_extras.tide_track:main',
             'nfl = home_extras.nfl_track:main',

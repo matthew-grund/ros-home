@@ -137,7 +137,7 @@ class EventDetector(Node):
             self.publish_event('FORECAST','ERROR','Weather tracker node restarted',wx)
             self.period_name = ""
         if self.period_name != wx[0]['name']:
-            self.publish_event('FORECAST','INFO','NEW FORECAST: %s - %s'% (wx[0]['name'],wx[0]['detailedForecast']),wx)
+            self.publish_event('FORECAST','INFO','%s - %s'% (wx[0]['name'],wx[0]['detailedForecast']),wx)
             self.period_name = wx[0]['name']
         else:
             self.get_logger().info('Forecast: %s - %s' % (wx[0]['name'],wx[0]['detailedForecast']))
@@ -147,9 +147,9 @@ class EventDetector(Node):
         wx = m['payload']
         if self.conditions_time != wx['timestamp']:
             if (type(wx['temperature']['value']) == int) or (type(wx['temperature']['value']) == float):
-                self.publish_event('CONDITIONS','INFO','NEW OBSERVATION: %s - %.1fF' % (wx['textDescription'],wx['temperature']['value']*9/5+32),wx)
+                self.publish_event('CONDITIONS','INFO','%s - %.1fF' % (wx['textDescription'],wx['temperature']['value']*9/5+32),wx)
             else:
-                self.publish_event('CONDITIONS','INFO','NEW OBSERVATION: %s - %s (weird temp)' % (wx['textDescription'],wx['temperature']['value']),wx)
+                self.publish_event('CONDITIONS','INFO','%s - %s (weird temp)' % (wx['textDescription'],wx['temperature']['value']),wx)
             self.conditions_time = wx['timestamp']
         else:
             if wx['temperature']['value']:
