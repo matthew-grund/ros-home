@@ -21,16 +21,19 @@ class SunTracker(Node):
         self.publisher_ = self.create_publisher(String, 'sun', 10)
         self.timer_period = 10.0  # seconds
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
+        self.config_subscription = self.create_subscription(
+            String,
+            'settings',
+            self.config_listener_callback,
+            10)
+        self.config_subscription
         self.i = 0
-        self.city = "Mashpee"
-        self.state = "Massachusetts"
-        self.tzname = "America/New_York"
-        self.latitude = 41.619
-        self.longitude = -70.451
-        self.location = LocationInfo(self.city, self.state, self.tzname, self.latitude, self.longitude)
         self.sun_data = {}
+        self.need_config_location = True
 
     def timer_callback(self):
+        if self.need_config_location:
+            return  # don't do anything until we get location
         self.update_sun_track()
         sundict = {}
         sundict['next_event'] = self.next_event
@@ -81,6 +84,18 @@ class SunTracker(Node):
         self.secs_remaining = min_sec
         self.prev_event = max_event
         self.secs_elapsed = max_sec
+
+    def config_listener_callback(self,msg):
+        msg = json.loads(msg.data)
+        if msg['payload']['type'] == "LOCATION":
+            self.latitude = float(msg['payload']['Coordinates']['latitude']) 
+            self.longitude = float(msg['payload']['Coordinates']['longitude']) 
+            self.city = msg['payload']['City']['city']              
+            self.state = msg['payload']['City']['state']
+            self.tzname = msg['payload']['Timezone']['tzname']
+            self.location = LocationInfo(self.city, self.state, self.tzname, self.latitude, self.longitude)
+            self.need_config_location = False
+            self.get_logger().info(f"Got config: Location is {self.city}, {self.state}")
 
 
 def main(args=None):
