@@ -19,21 +19,34 @@ class SMSMessager(Node):
             self.event_listener_callback,
             10)
         self.event_subscription  # prevent unused variable warning
-        self.port = 465
-        self.smtp_server_domain_name = "smtp.gmail.com"
-        self.sender_mail = "9criverview@gmail.com"
-        self.password = "zegvbejqjvcbvdin"
-        self.dest_mail = "5085244628@mms.att.net"
-
+        self.config_subscription = self.create_subscription(
+            String,
+            'settings',
+            self.config_listener_callback,
+            10)
+        self.event_subscription  # prevent unused variable warning
+        self.need_config = True
 
     def event_listener_callback(self, msg):
-        m = json.loads(msg.data)
-        event = m['payload']
-        subj = event['event_type']
-        msg = event['description']
-        if subj!="DEV":
-            self.send(subj,msg)
+        if not self.need_config:
+            m = json.loads(msg.data)
+            event = m['payload']
+            subj = event['event_type']
+            msg = event['description']
+            # filter the events
+            if subj!="DEV":
+                self.send(subj,msg)
     
+    def config_listener_callback(self,msg):
+        if msg['payload']['type'] == "SMS":
+            self.port = msg['payload']['Server']['port'] 
+            self.smtp_server_domain_name = msg['payload']['Server']['smtp_server']
+            self.sender_mail = msg['payload']['Sender']['address']
+            self.password = msg['payload']['Sender']['password']
+            self.dest_mail = msg['payload']['Recipient']['address']
+            self.need_config = False
+            self.get_logger().info(f"Got config: {self.sender_mail} sending to {self.dest_mail}")
+
     def send(self, subject, content):
         ssl_context = ssl.create_default_context()
         service = smtplib.SMTP_SSL(self.smtp_server_domain_name, self.port, context=ssl_context)
