@@ -38,6 +38,7 @@ class SMSMessager(Node):
                 self.send(subj,msg)
     
     def config_listener_callback(self,msg):
+        msg = json.loads(msg.data)
         if msg['payload']['type'] == "SMS":
             self.port = msg['payload']['Server']['port'] 
             self.smtp_server_domain_name = msg['payload']['Server']['smtp_server']
