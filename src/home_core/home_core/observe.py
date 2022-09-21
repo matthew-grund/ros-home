@@ -7,6 +7,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 from std_msgs.msg import Float32
+import json
 
 class HomeObserver(Node):
 
@@ -17,6 +18,7 @@ class HomeObserver(Node):
         self.wx_wind_speed_kph = []
         self.wx_wind_dir_from_degrees = []
         self.wx_humidity_percent = []
+        self.dev_num_discovered_nodes = []
 
         # subscribe to curent conditions
         self.wx_cond_sub = self.create_subscription(
@@ -27,6 +29,8 @@ class HomeObserver(Node):
         self.wx_cond_sub  # prevent unused variable warning
 
     def wx_cond_callback(self, msg):
+        m = json.loads(msg.data)
+        cond = m['payload']
         self.get_logger().info('I heard: "%s"' % msg.data)
 
 
