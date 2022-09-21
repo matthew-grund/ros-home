@@ -62,10 +62,10 @@ class SunTracker(Node):
         self.sun_event={}
         self.sun_event['Dawn'] = (home_sun['dawn'] - now).total_seconds()
         self.sun_event['Sunrise'] = (home_sun['sunrise'] - now).total_seconds()
-        self.sun_event['GoldenHourEnd'] = (gham[1] - now).total_seconds()
+        self.sun_event['GoldenHourEnd'] = (gham[1] - now).total_seconds()         #FIXME: this is wrong after sunset
         self.sun_event['SolarNoon'] = (home_sun['noon'] - now).total_seconds()
-        self.sun_event['GoldenHourStart'] = (ghpm[0] - now).total_seconds()
-        self.sun_event['Sunset'] = (home_sun['sunset'] - now).total_seconds()
+        self.sun_event['GoldenHourStart'] = (ghpm[0] - now).total_seconds()       #FIXME: this is wrong after sunset
+        self.sun_event['Sunset'] = (home_sun['sunset'] - now).total_seconds()     
         self.sun_event['Dusk'] = (home_sun['dusk'] - now).total_seconds()
 
         min_sec = 24 * 3600
