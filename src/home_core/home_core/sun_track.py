@@ -7,7 +7,7 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 import json
-from datetime import datetime
+from datetime import date, time, datetime
 import pytz
 from astral import LocationInfo
 from astral.sun import sun
@@ -53,28 +53,34 @@ class SunTracker(Node):
         self.i += 1
 
     def update_sun_track(self):
+        
         home_tz = pytz.timezone(self.tzname)
         now = home_tz.localize(datetime.now())
+        midnight = datetime.combine(datetime.today(), time.min)
+        midnight = home_tz.localize(midnight)
         home_sun = sun(self.location.observer)
-        gham = golden_hour(self.location.observer, datetime.now().date(), SunDirection.RISING)
-        ghpm = golden_hour(self.location.observer, datetime.now().date(), SunDirection.SETTING)
+        gham = golden_hour(self.location.observer, midnight.date(), SunDirection.RISING)   # use midnight to keep on the current day
+        ghpm = golden_hour(self.location.observer, midnight.date(), SunDirection.SETTING)
 
+        # seconds since midnight for today's sun events
         self.sun_event={}
-        self.sun_event['Dawn'] = (home_sun['dawn'] - now).total_seconds()
-        self.sun_event['Sunrise'] = (home_sun['sunrise'] - now).total_seconds()
-        self.sun_event['GoldenHourEnd'] = (gham[1] - now).total_seconds()         #FIXME: this is wrong after sunset
-        self.sun_event['SolarNoon'] = (home_sun['noon'] - now).total_seconds()
-        self.sun_event['GoldenHourStart'] = (ghpm[0] - now).total_seconds()       #FIXME: this is wrong after sunset
-        self.sun_event['Sunset'] = (home_sun['sunset'] - now).total_seconds()     
-        self.sun_event['Dusk'] = (home_sun['dusk'] - now).total_seconds()
+        self.sun_event['Dawn'] = (home_sun['dawn'] - midnight).total_seconds()
+        self.sun_event['Sunrise'] = (home_sun['sunrise'] - midnight).total_seconds()
+        self.sun_event['GoldenHourEnd'] = (gham[1] - midnight).total_seconds()         
+        self.sun_event['SolarNoon'] = (home_sun['noon'] - midnight).total_seconds()
+        self.sun_event['GoldenHourStart'] = (ghpm[0] - midnight).total_seconds()       
+        self.sun_event['Sunset'] = (home_sun['sunset'] - midnight).total_seconds()     
+        self.sun_event['Dusk'] = (home_sun['dusk'] - midnight).total_seconds()
 
+        adjust_to_now = (now - midnight).total_seconds()
         min_sec = 24 * 3600
         min_event = 'Unknown'
         max_sec = -24 * 3600
         max_event = 'Unknown'
         for key in self.sun_event:
             value = self.sun_event[key]
-            if (value >= 0.0) and (value < min_sec):
+            value = value - adjust_to_now
+            if (value >= 0.0) and (value < min_sec): 
                 min_sec = value
                 min_event = key
             if (value <= 0.0) and (value > max_sec):
@@ -83,7 +89,8 @@ class SunTracker(Node):
         self.next_event = min_event
         self.secs_remaining = min_sec
         self.prev_event = max_event
-        self.secs_elapsed = max_sec
+        self.secs_elapsed = abs(max_sec)
+
 
     def config_listener_callback(self,msg):
         msg = json.loads(msg.data)
