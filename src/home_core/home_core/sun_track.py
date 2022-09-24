@@ -37,7 +37,7 @@ class SunTracker(Node):
         self.update_sun_track()
         sundict = {}
         sundict['next_event'] = self.next_event
-        sundict['prev_event'] = self.prev_event
+        sundict['previous_event'] = self.prev_event
         sundict['secs_remaining'] = self.secs_remaining
         sundict['secs_elapsed'] = self.secs_elapsed
         sundict['events'] = self.sun_event
@@ -54,10 +54,14 @@ class SunTracker(Node):
 
     def update_sun_track(self):
         
-        home_tz = pytz.timezone(self.tzname)
-        now = home_tz.localize(datetime.now())
-        midnight = datetime.combine(datetime.today(), time.min)
-        midnight = home_tz.localize(midnight)
+        if self.need_config_location:
+            now = datetime.now()
+            midnight = datetime.combine(datetime.today(), time.min)
+        else:
+            home_tz = pytz.timezone(self.tzname)
+            now = home_tz.localize(datetime.now())
+            midnight = datetime.combine(datetime.today(), time.min)
+            midnight = home_tz.localize(midnight)
         home_sun = sun(self.location.observer)
         gham = golden_hour(self.location.observer, midnight.date(), SunDirection.RISING)   # use midnight to keep on the current day
         ghpm = golden_hour(self.location.observer, midnight.date(), SunDirection.SETTING)
