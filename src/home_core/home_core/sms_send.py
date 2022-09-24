@@ -34,7 +34,7 @@ class SMSMessager(Node):
             subj = event['event_type']
             msg = event['description']
             # filter the events
-            if subj!="DEV":          # device discovery very noisy at the minute
+            if subj!="DEVICE":          # device discovery very noisy at the minute
                 self.send(subj,msg)
     
     def config_listener_callback(self,msg):
