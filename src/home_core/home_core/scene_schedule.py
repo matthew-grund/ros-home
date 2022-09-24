@@ -16,7 +16,7 @@ class HomeScheduler(Node):
 
     def __init__(self):
         super().__init__('home_scheduler')
-        self.publisher_ = self.create_publisher(String, 'scene', 10)
+        self.publisher_ = self.create_publisher(String, 'scenes', 10)
         self.timer_period = 3.0  # seconds
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
         self.config_subscription = self.create_subscription(

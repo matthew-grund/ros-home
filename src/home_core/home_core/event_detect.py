@@ -35,7 +35,7 @@ class EventDetector(Node):
 
         self.subscription_scene = self.create_subscription(
             String,
-            'scene',
+            'scenes',
             self.scene_callback,
             10)
         self.subscription_scene  # prevent unused variable warning
@@ -117,8 +117,8 @@ class EventDetector(Node):
         m = json.loads(msg.data)
         self.device_interval = m['interval']
         self.new_devices = m['payload']
-        if m['index'] == 0:
-            self.publish_event('DEV','ERROR','Device discovery node restarted',self.new_devices)
+        #if m['index'] == 0:
+        #    self.publish_event('DEV','ERROR','Device discovery node restarted',self.new_devices)
         self.detect_device_event()
 
     def occupancy_callback(self, msg):
@@ -128,8 +128,8 @@ class EventDetector(Node):
         m = json.loads(msg.data)
         max_sec = m['interval']
         sun = m['payload']
-        if m['index'] == 0:
-            self.publish_event('SUN','ERROR','Sun tracker node restarted',sun)
+        #if m['index'] == 0:
+        #    self.publish_event('SUN','ERROR','Sun tracker node restarted',sun)
         rem_hours = sun['secs_remaining'] / 3600.0
         event = sun['next_event']    
         self.get_logger().info('Sun: %.1f hours until %s' % (rem_hours,event))
@@ -141,7 +141,7 @@ class EventDetector(Node):
         max_sec = m['interval']
         scene = m['payload']
         if m['index'] == 0:
-            self.publish_event('SCENE','ERROR','Schedule node restarted',scene)
+            self.publish_event('SCENE','ERROR','Scene node restarted',scene)
         rem_hours = scene['secs_remaining'] / 3600.0
         scenename = scene['next_scene']    
         self.get_logger().info('Scene: %.1f hours until %s' % (rem_hours,scenename))
@@ -187,7 +187,7 @@ class EventDetector(Node):
         known_len = len(self.known_devices)
         new_len = len(self.new_devices)
         if known_len == 0:
-            self.publish_event('DEV','INFO','Devices: %d NEW devices' % new_len,self.new_devices)
+            self.publish_event('DEVICE','INFO','Devices: %d NEW devices' % new_len,self.new_devices)
         for d in self.new_devices:
             dev_is_new = True
             for kd in self.known_devices:
@@ -201,7 +201,7 @@ class EventDetector(Node):
                 d['times_missed'] = 0
                 d['last_seen'] = datetime.datetime.utcnow().isoformat()
                 self.known_devices.append(d)
-                self.publish_event('DEV','INFO','Devices: NEW device: %s@%s' % (d['name'],d['ip']),d)
+                self.publish_event('DEVICE','INFO','Devices: NEW device: %s@%s' % (d['name'],d['ip']),d)
         # check if a known device is missing from the lastest scan        
         for kd in self.known_devices:
             dev_is_lost = True
@@ -210,7 +210,7 @@ class EventDetector(Node):
                     dev_is_lost = False
             if dev_is_lost:
                 kd['times_missed'] = kd['times_missed'] + 1
-                self.publish_event('DEV','WARNING','Devices: Missed known device: %s@%s last seen %s' % (kd['name'],kd['ip'],kd['last_seen']),kd)
+                self.publish_event('DEVICE','WARNING','Devices: Missed known device: %s@%s last seen %s' % (kd['name'],kd['ip'],kd['last_seen']),kd)
         # share the master list        
         self.publish_known_devices()
 
