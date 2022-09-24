@@ -27,9 +27,9 @@ setup(
             'observe = home_core.observe:main',
             'occupancy = home_core.occupancy_track:main',
             'scene = home_core.scene_execute:main',
-            'schedule = home_core.schedule:main',
+            'schedule = home_core.scene_schedule:main',
             'sun = home_core.sun_track:main',
-            'sms = home_core.sms_message:main',
+            'sms = home_core.sms_send:main',
             'weather = home_core.weather_track:main'
         ],
     },
