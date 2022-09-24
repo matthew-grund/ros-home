@@ -33,6 +33,13 @@ class EventDetector(Node):
             10)
         self.subscription_occupancy  # prevent unused variable warning
 
+        self.subscription_scene = self.create_subscription(
+            String,
+            'scene',
+            self.scene_callback,
+            10)
+        self.subscription_scene  # prevent unused variable warning
+
         self.subscription_sun = self.create_subscription(
             String,
             'sun',
@@ -128,6 +135,18 @@ class EventDetector(Node):
         self.get_logger().info('Sun: %.1f hours until %s' % (rem_hours,event))
         if sun['secs_remaining'] <= max_sec:
             self.publish_event('SUN','INFO','%s'% event,sun)
+            
+    def scene_callback(self, msg):
+        m = json.loads(msg.data)
+        max_sec = m['interval']
+        scene = m['payload']
+        if m['index'] == 0:
+            self.publish_event('SCENE','ERROR','Schedule node restarted',scene)
+        rem_hours = scene['secs_remaining'] / 3600.0
+        scenename = scene['next_scene']    
+        self.get_logger().info('Scene: %.1f hours until %s' % (rem_hours,scenename))
+        if scene['secs_remaining'] <= max_sec:
+            self.publish_event('SCENE','INFO','%s'% scenename,scene)
 
     def forecast_callback(self, msg): 
         m = json.loads(msg.data)

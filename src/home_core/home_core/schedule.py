@@ -10,8 +10,8 @@ from std_msgs.msg import String
 from datetime import date, time, datetime, timedelta
 import json
 from dateutil import parser
-
-
+import math
+import pytz
 class HomeScheduler(Node):
 
     def __init__(self):
@@ -36,6 +36,7 @@ class HomeScheduler(Node):
         self.need_named_events = True
         self.schedule = {}
         self.raw_schedule = {}
+        self.today_schedule = {}
 
     def timer_callback(self):
         msg = String()
@@ -43,13 +44,18 @@ class HomeScheduler(Node):
         m['index'] = self.i
         m['interval'] = self.timer_period
         m['payload'] = {}
-        m['payload']['scenes'] = self.schedule
         m['payload']['today'] = self.today_str()
+        self.process_todays_schedule()
+        m['payload']['next_scene'] = self.next_scene
+        m['payload']['previous_scene'] = self.prev_scene
+        m['payload']['secs_remaining'] = self.secs_remaining
+        m['payload']['secs_elapsed'] = self.secs_elapsed
+        m['payload']['scenes'] = self.today_schedule
         msg.data = json.dumps(m)
         self.publisher_.publish(msg)
         self.get_logger().info('Publishing schedule with %d scenes' % len(m['payload']['scenes']))
         self.i += 1
-        
+        self.need_config_location = True
 
     def config_listener_callback(self,msg):
         msg = json.loads(msg.data)
@@ -58,7 +64,15 @@ class HomeScheduler(Node):
             self.get_logger().info(f"Got scehdule: %s" % json.dumps(self.raw_schedule))
             self.schedule = self.process_raw_schedule(self.raw_schedule)
             self.need_config_schedule = False
-            
+        if msg['payload']['type'] == "LOCATION":
+            self.latitude = float(msg['payload']['Coordinates']['latitude']) 
+            self.longitude = float(msg['payload']['Coordinates']['longitude']) 
+            self.city = msg['payload']['City']['city']              
+            self.state = msg['payload']['City']['state']
+            self.tzname = msg['payload']['Timezone']['tzname']
+            self.need_config_location = False
+            self.get_logger().info(f"Got config: Location is {self.city}, {self.state}")
+   
     def process_raw_schedule(self, raw):
         schedule = {}
         # expand raw to the scene schedule
@@ -67,19 +81,19 @@ class HomeScheduler(Node):
                 # make the day array
                 if 'day' in raw[scene]:
                     raw[scene]['day'] = self.parse_day_str(raw[scene]['day'])
-                    self.get_logger().info(f"Scene '%s' has 'day' '%s'" % (scene,raw[scene]['day']))
+                    # self.get_logger().info(f"Scene '%s' has 'day' '%s'" % (scene,raw[scene]['day']))
                 else:
                     raw[scene]['day'] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
                     self.get_logger().warn(f"Scene '%s' has no entry 'day' (will run every day)" % scene)
                 # compute the seconds since midnight    
                 if 'time' in raw[scene]: 
                    raw[scene]['time_seconds'] = self.parse_time_str(raw[scene]['time'])
-                   self.get_logger().info(f"Scene '%s' has 'time' '%.1f'" % (scene,raw[scene]['time_seconds']))
+                   # self.get_logger().info(f"Scene '%s' has 'time' '%.1f'" % (scene,raw[scene]['time_seconds']))
                 else:
                    raw[scene]['time_seconds'] = nan  
                     
                 if raw[scene]['time_seconds'] != nan: 
-                    print(f"adding scene '%s' to schedule" % scene )      
+                    # print(f"adding scene '%s' to schedule" % scene )      
                     schedule[scene] = raw[scene]
                 else:
                     self.get_logger().error(f"Scene '%s' time not parsed" % scene)
@@ -188,7 +202,43 @@ class HomeScheduler(Node):
                 else:    
                     print(f"\t\t%s" % schedule[scene][field])      
         print("--------------------------")            
-        
+    
+    def process_todays_schedule(self):
+        self.today_schedule = {}    
+        if len(self.schedule) > 0 :
+            for scene in self.schedule:
+                scene_dict = self.schedule[scene]   
+                day_dict = scene_dict['day']           
+                if self.today in day_dict:
+                    if not math.isnan(scene_dict['time_seconds']):
+                        self.today_schedule[scene] = scene_dict['time_seconds'] 
+        if self.need_config_location:
+            now = datetime.now()
+            midnight = datetime.combine(datetime.today(), time.min)
+        else:
+            home_tz = pytz.timezone(self.tzname)
+            now = home_tz.localize(datetime.now())
+            midnight = datetime.combine(datetime.today(), time.min)
+            midnight = home_tz.localize(midnight)         
+        adjust_to_now = (now - midnight).total_seconds()
+        min_sec = 24 * 3600
+        min_scene = 'Unknown'
+        max_sec = -24 * 3600
+        max_scene = 'Unknown'
+        for key in self.today_schedule:
+            value = self.today_schedule[key]
+            value = value - adjust_to_now
+            if (value >= 0.0) and (value < min_sec): 
+                min_sec = value
+                min_scene = key
+            if (value <= 0.0) and (value > max_sec):
+                max_sec = value
+                max_scene = key
+        self.next_scene = min_scene
+        self.secs_remaining = min_sec
+        self.prev_scene = max_scene
+        self.secs_elapsed = abs(max_sec)
+
                     
 def main(args=None):
     rclpy.init(args=args)
