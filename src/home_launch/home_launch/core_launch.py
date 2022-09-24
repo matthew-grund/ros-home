@@ -34,9 +34,16 @@ def generate_launch_description():
         executable="config"
     )
 
+    schedule_node = Node(
+        package="home_core",
+        executable="schedule"
+    )
+
+
     ld.add_action(discovery_node)
     ld.add_action(weather_node)
     ld.add_action(sun_node)
+    ld.add_action(schedule_node)
     ld.add_action(event_node)
     ld.add_action(sms_node)
     ld.add_action(config_node)
