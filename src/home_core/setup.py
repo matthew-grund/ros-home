@@ -24,7 +24,7 @@ setup(
             'config = home_core.file_configure:main',
             'event = home_core.event_detect:main',
             'netdisco = home_core.net_discover:main',
-            'observe = home_core.observe:main',
+            'observe = home_core.home_monitor:main',
             'occupancy = home_core.occupancy_track:main',
             'scene = home_core.scene_execute:main',
             'schedule = home_core.scene_schedule:main',
