@@ -30,7 +30,8 @@ class HomeObserver(Node):
 
     def wx_cond_callback(self, msg):
         m = json.loads(msg.data)
-        cond = m['payload']
+        wx = m['payload']
+        temp = wx
         self.get_logger().info('I heard: "%s"' % msg.data)
 
 
