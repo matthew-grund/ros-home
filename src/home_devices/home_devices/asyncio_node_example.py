@@ -1,5 +1,8 @@
 # example of how to integrate an asyncio pattern with a ros2 node
-
+# found on: https://github.com/mavlink/MAVSDK-Python/
+#
+# relevance: pylutron-caseta uses asyncio, perhaps others?  
+#
 import rclpy
 from rclpy.node import Node
 
@@ -37,7 +40,7 @@ class MinimalPublisher(Node):
         self.i += 1
 
 async def spin_once(minimal_publisher):
-    rclpy.spin_once(minimal_publisher)
+    rclpy.spin_once(minimal_publisher, timeout_sec=0)
 
 
 async def run_ros2(minimal_publisher):
