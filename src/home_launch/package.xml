@@ -3,7 +3,7 @@
 <package format="3">
   <name>home_launch</name>
   <version>0.0.3</version>
-  <description>Home_launch provides home node launch</description>
+  <description>Home_launch provides home node launch files</description>
   <maintainer email=""matthew.grund77@gmail.com"">Matthew Grund</maintainer>
   <license>BSD-2-clause</license>
 
