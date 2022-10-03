@@ -5,12 +5,16 @@
 #
 import rclpy
 from rclpy.node import Node
-
 from std_msgs.msg import String
 
 
 class OccupancyTracker(Node):
-
+    #  The occupancy_tracker node uses bluetooth discovery methods, and other 
+    #  methods. The node publishes data on the "occupants" topic, which is
+    #  monitored by the event_detect node.
+    #  The stretch goal is per-room occupancy detection, however the minimum requirement
+    #  is home/away detection for all family members.
+    #
     def __init__(self):
         super().__init__('occupancy_tracker')
         self.publisher_ = self.create_publisher(String, 'occupants', 10)
