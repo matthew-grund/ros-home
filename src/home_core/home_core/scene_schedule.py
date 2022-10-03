@@ -13,7 +13,10 @@ from dateutil import parser
 import math
 import pytz
 class HomeScheduler(Node):
-
+    # The home_scheduler node takes configuration from the "settings" topic.
+    # it relies on the config node to publish data from the file "schedule.ini"
+    # and uses the schedule to publish a message on the "scenes" topic, every
+    # so often.
     def __init__(self):
         super().__init__('home_scheduler')
         self.publisher_ = self.create_publisher(String, 'scenes', 10)
