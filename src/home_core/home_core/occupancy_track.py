@@ -15,7 +15,6 @@ class OccupancyTracker(Node):
     #  monitored by the event_detect node.
     #  The stretch goal is per-room occupancy detection, however the minimum requirement
     #  is home/away detection for all family members.
-    #
     def __init__(self):
         super().__init__('occupancy_tracker')
         self.publisher_ = self.create_publisher(String, 'occupants', 10)
@@ -24,8 +23,7 @@ class OccupancyTracker(Node):
         self.n_bt = 0
 
     def bt_timer_callback(self):
-        nearby_devices =  bluetooth.discover_dvices()
-        
+        nearby_devices =  bluetooth.discover_devices()
         msg = String()
         msg.data = 'Occupants: %d' % self.n_bt
         self.publisher_.publish(msg)

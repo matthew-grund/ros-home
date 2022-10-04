@@ -10,7 +10,9 @@ import requests
 import json
 
 class WeatherTracker(Node):
-
+    # the weather tracker node provides forecasts and current conditions, by interacting 
+    # with the U.S. N.O.A.A. weather service.
+    #
     def __init__(self):
         super().__init__('weather_tracker')
         self.publisher_wx = self.create_publisher(String, 'wx_forecast', 10)
@@ -31,7 +33,7 @@ class WeatherTracker(Node):
         
     def timer_callback(self):
         if self.need_config_location:
-            return  # don't do anything until we get the home location
+            return  # don't do anything until we get the home location, from the config node
 
         if self.need_forecast_url:
             '''https://api.weather.gov/points/41.619,-70.451'''
