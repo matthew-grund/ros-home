@@ -6,7 +6,8 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
-
+import bluetooth
+import json
 
 class OccupancyTracker(Node):
     #  The occupancy_tracker node uses bluetooth discovery methods, and other 
@@ -18,16 +19,17 @@ class OccupancyTracker(Node):
     def __init__(self):
         super().__init__('occupancy_tracker')
         self.publisher_ = self.create_publisher(String, 'occupants', 10)
-        timer_period = 7.0  # seconds
-        self.timer = self.create_timer(timer_period, self.timer_callback)
-        self.i = 0
+        self.bt_timer_period = 3.0  # seconds
+        self.timer_bt = self.create_timer(self.bt_timer_period, self.bt_timer_callback)
+        self.n_bt = 0
 
-    def timer_callback(self):
+    def bt_timer_callback(self):
+        nearby_devices =  bluetooth.discover_dvices()
         msg = String()
-        msg.data = 'Occupants: %d' % self.i
+        msg.data = 'Occupants: %d' % self.n_bt
         self.publisher_.publish(msg)
         self.get_logger().info('Publishing: "%s"' % msg.data)
-        self.i += 1
+        self.n_bt += 1
 
 
 def main(args=None):
