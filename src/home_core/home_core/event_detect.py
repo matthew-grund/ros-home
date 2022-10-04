@@ -21,7 +21,7 @@ class EventDetector(Node):
         self.known_devices=[]
         self.subscription_devices = self.create_subscription(
             String,
-            'devices',
+            'net_devices',
             self.devices_callback,
             10)
         self.subscription_devices  # prevent unused variable warning
@@ -77,7 +77,8 @@ class EventDetector(Node):
         self.event_index = 0
         self.publisher_devices = self.create_publisher(String, 'known_net_devices', 10)
         self.wx_latest_conditions = ""
-
+        self.wx_recent_forecasts = {}
+        
     def timer_callback(self):
         self.i += 1
     
