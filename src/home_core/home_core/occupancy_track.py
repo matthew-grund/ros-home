@@ -6,7 +6,7 @@
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
-import bluetooth
+import bluetooth    
 import json
 
 class OccupancyTracker(Node):
@@ -25,6 +25,7 @@ class OccupancyTracker(Node):
 
     def bt_timer_callback(self):
         nearby_devices =  bluetooth.discover_dvices()
+        
         msg = String()
         msg.data = 'Occupants: %d' % self.n_bt
         self.publisher_.publish(msg)
