@@ -24,7 +24,7 @@ class SMSMessager(Node):
             'settings',
             self.config_listener_callback,
             10)
-        self.event_subscription  # prevent unused variable warning
+        self.config_subscription  # prevent unused variable warning
         self.need_config = True
 
     def event_listener_callback(self, msg):
