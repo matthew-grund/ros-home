@@ -54,7 +54,7 @@ class HomeConfigurator(Node):
         msg = String()
         msg.data = mstr
         self.publisher_settings.publish(msg)
-        self.get_logger().info('Config loading "%s" - %s' % (settings['type'],mstr))
+        self.get_logger().info('Config publishing "%s" - %s' % (settings['type'],mstr))
         self.i += 1
 
 def main(args=None):
