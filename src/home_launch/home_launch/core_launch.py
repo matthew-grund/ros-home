@@ -61,7 +61,6 @@ def generate_launch_description():
         executable="weather"
     )
 
-
     ld.add_action(discovery_node)
     ld.add_action(weather_node)
     ld.add_action(sun_node)
