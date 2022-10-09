@@ -23,7 +23,7 @@ class HomeObserver(Node):
         self.publisher_nodes = self.create_publisher(Int32, 'num_nodes', 10)
         self.publisher_node_list = self.create_publisher(String,'node_list',10)
         self.node_list_iter = 0
-        self.ps_timer_period = 3  # seconds
+        self.ps_timer_period = 10  # seconds
         self.ps_timer = self.create_timer(self.ps_timer_period, self.ps_timer_callback)
         self.current_nodes = {}
         self.known_nodes = {}

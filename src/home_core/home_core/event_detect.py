@@ -26,12 +26,12 @@ class EventDetector(Node):
             10)
         self.subscription_devices  # prevent unused variable warning
 
-        self.subscription_occupancy = self.create_subscription(
+        self.subscription_owntracks = self.create_subscription(
             String,
-            'occupants',
-            self.occupancy_callback,
+            'owntracks',
+            self.owntracks_callback,
             10)
-        self.subscription_occupancy  # prevent unused variable warning
+        self.subscription_owntracks  # prevent unused variable warning
 
         self.subscription_scene = self.create_subscription(
             String,
@@ -122,8 +122,12 @@ class EventDetector(Node):
         #    self.publish_event('DEV','ERROR','Device discovery node restarted',self.new_devices)
         self.detect_device_event()
 
-    def occupancy_callback(self, msg):
-        self.get_logger().info('Occupants: "%s"' % msg.data)
+    def owntracks_callback(self, msg):
+        self.get_logger().info('Owntracks: "%s"' % msg.data)
+        md = json.loads(msg.data)
+        track = md['payload']
+        if track['type'] == 'EVENT':
+            self.publish_event('TRACK','INFO',track['description'],track)
 
     def sun_callback(self, msg):
         m = json.loads(msg.data)
