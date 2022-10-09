@@ -5,41 +5,7 @@ from launch_ros.actions import Node
 #
 def generate_launch_description():
     ld = LaunchDescription()
-
-    # network discovery of smart home devices
-    discovery_node = Node(
-        package="home_core",
-        executable="netdisco",
-    )
-
-    # weather forecast and current conditions can inform 
-    # control decisions, like thermostat setting
-    weather_node = Node(
-        package="home_core",
-        executable="weather"
-    )
-
-    # sun position in the sky can inform control decisions,
-    # like lighting activation times, with events published like "Sunrise".
-    sun_node = Node(
-        package="home_core",
-        executable="sun"
-    )
-
-    # the core control concept in ROS Home is the event. This node filters data from "track"
-    # nodes, and develops events.
-    event_node = Node(
-        package="home_core",
-        executable="event"
-    )
     
-    # The SMS node sits on the "events" topic, and notifies users by email, with 
-    # SMS email addresses possible.
-    sms_node = Node(
-        package="home_core",
-        executable="sms"
-    )
-
     # The config node monitors a directory for INI files, and publishes contents of those files
     # to the "settings" topic. This node is flexible, and will publish contents of ANY INI file.
     #
@@ -48,11 +14,51 @@ def generate_launch_description():
         executable="config"
     )
 
+    # the core control concept in ROS Home is the event. This node filters data from "track"
+    # nodes, and develops events.
+    event_node = Node(
+        package="home_core",
+        executable="event"
+    )
+
+    # network discovery of smart home devices
+    discovery_node = Node(
+        package="home_core",
+        executable="netdisco",
+    )
+
+    # MQTT interface to OwnTracks app
+    owntracks_node = Node(
+        package="home_core",
+        executable="owntracks",
+    )
+
     # the schedule node reads a scene schedule INI, and publishes 
     # event-ready time data for the day
     schedule_node = Node(
         package="home_core",
         executable="schedule"
+    )
+    
+    # The SMS node sits on the "events" topic, and notifies users by email, with 
+    # SMS email addresses possible.
+    sms_node = Node(
+        package="home_core",
+        executable="sms"
+    )
+    
+    # sun position in the sky can inform control decisions,
+    # like lighting activation times, with events published like "Sunrise".
+    sun_node = Node(
+        package="home_core",
+        executable="sun"
+    )
+
+    # weather forecast and current conditions can inform 
+    # control decisions, like thermostat setting
+    weather_node = Node(
+        package="home_core",
+        executable="weather"
     )
 
 
@@ -63,5 +69,6 @@ def generate_launch_description():
     ld.add_action(event_node)
     ld.add_action(sms_node)
     ld.add_action(config_node)
+    ld.add_action(owntracks_node)
 
     return ld
