@@ -23,6 +23,7 @@ setup(
             'command = home_core.command:main',
             'config = home_core.file_configure:main',
             'event = home_core.event_detect:main',
+            'monitor = home_core.home_monitor:main', 
             'netdisco = home_core.net_discover:main',
             'btdisco = home_core.bt_discover:main',
             'observe = home_core.home_monitor:main',
