@@ -9,7 +9,9 @@ from std_msgs.msg import String
 import json
 import paho.mqtt.client as mqtt
 import urllib.parse
- 
+from math import nan
+
+owntracks_reader = None 
 class OwnTracksMQTTReader(Node):
     
     def __init__(self):
@@ -30,36 +32,14 @@ class OwnTracksMQTTReader(Node):
         self.need_mqtt_settings = True
         self.need_mqtt_connect = True
         
-        #the  mwtt client
-        self.mqtt_client = mqtt.Client()
-
-        # Assign event callbacks
-        self.mqtt_client.on_message = self.on_message
-        self.mqtt_client.on_connect = self.on_connect
-        self.mqtt_client.on_publish = self.on_publish
-        self.mqtt_client.on_subscribe = self.on_subscribe
-
-    def on_connect(self,client, userdata, flags, rc):
-        # print("connect: " + str(rc))
-        self.get_logger().info(f"Connect: %s" % str(rc))
-
-    def on_message(self,client, obj, msg):
-        # print("message: " + msg.topic + " " + str(msg.qos) + " " + str(msg.payload))
-        self.get_logger().info(f"New track: %s" % str(msg.payload))
+        self.latest_event_time = 0
+        self.latest_track_time = 0
         
-    def on_publish(self,client, obj, mid):
-        # print("mid: " + str(mid))
-        self.get_logger().info(f"Sent: %s" % str(mid))
-
-    def on_subscribe(self,client, obj, mid, granted_qos):
-        # print("Subscribed: " + str(mid) + " " + str(granted_qos))
-        self.get_logger().info(f"Subscribed: %s" % str(mid) + " " + str(granted_qos))
-
     def settings_callback(self,msg):
         msg = json.loads(msg.data)
         if msg['payload']['type'] == "OWNTRACKS":
             self.mqtt_server = msg['payload']
-            self.get_logger().info(f"Got owntracks mqtt server: %s" % json.dumps(self.mqtt))
+            self.get_logger().info(f"Got owntracks mqtt server: %s" % json.dumps(self.mqtt_server))
             self.url_str = self.process_url(self.mqtt_server)
             self.need_mqtt_settings = False
             self.get_logger().info(f"Got config: URL is: %s" % self.url_str )
@@ -73,31 +53,144 @@ class OwnTracksMQTTReader(Node):
         password = mqtt_cfg['User']['password']
         url_str = protocol + "://" + username + ":" + password + "@" + server + ":" + port
         return url_str
- 
-    def connect_mqtt(self):
-        url = urllib.parse.urlparse(self.url_str)
-        # Connect
-        self.mqtt_client.username_pw_set(url.username, url.password)
-        self.mqrr_client.connect(url.hostname, url.port)
-        # Start subscribe, with QoS level 0
-        self.mqtt_client.subscribe(self.topic, 0)
- 
-def main(args=None):       
-    rclpy.init(args=args)
 
+    def publish_event(self,event):
+        owntracks_reader.get_logger().info(f"Publishing new event: %s" % json.dumps(event))
+        e = {}
+        e['type'] = "EVENT"
+        e['timestamp'] = event['tst']
+        e['latitude_deg'] = event['lat']
+        e['longitude_deg'] = event['lon']
+        e['tracked_id'] = event['tid'].upper()
+        if event['event'] == 'leave':
+            e['action'] = 'EXFILTRATE'
+            dir = " Departed "
+        else:
+            e['action'] = 'INFILTRATE'
+            dir = " Arrived in "
+        e['region'] = event['desc']    
+        e['description'] = event['tid'].upper() + dir + event['desc']
+        self.publish_msg(e)
+        
+    def publish_track(self,track):
+        owntracks_reader.get_logger().info(f"Publishing new track: %s" % json.dumps(track))
+        t = {}
+        t['type'] = "TRACK"
+        t['timestamp'] = track['tst']
+        t['latitude_deg'] = track['lat']
+        t['longitude_deg'] = track['lon']
+        t['tracked_id'] = track['tid'].upper()
+        t['phone_battery_percent'] = track['batt'] 
+        if 'cog' in track:
+            t['course_deg'] = track['cog']
+        else:
+            t['course_deg'] = nan
+        if 'vel' in track:   
+            t['speed_kph'] = track['vel']   
+        else:
+            t['speed_kph'] = 0
+        if 'inregions' in track:
+            t['region'] = track['inregions'][0]
+        else:
+            t['region'] = 'Earth'          
+        self.publish_msg(t)
+        
+    def publish_msg(self,payload_dict):
+        msg = String()
+        msgdict = {}
+        msgdict['index'] = self.msg_index
+        self.msg_index += 1
+        msgdict['interval'] = nan
+        msgdict['payload'] = payload_dict
+        msg.data = json.dumps(msgdict)
+        self.publisher_tracks.publish(msg)
+        self.get_logger().info(f"Published: %s" % msg.data)
+
+    
+def on_connect(client, userdata, flags, rc):
+        global owntracks_reader
+        if owntracks_reader == None:
+            print(f"MQTT Connected: %s" % str(rc))
+        else:
+            owntracks_reader.get_logger().info(f"Connected to MQTT Server: %s" % str(rc))
+            
+def on_message(client, obj, msg):
+        global owntracks_reader
+        if owntracks_reader == None:
+            print(f"MQTT New track: %s" % str(msg.payload))
+        else:
+            track = json.loads(msg.payload)
+            if 'event' in track:
+                owntracks_reader.get_logger().info(f"MQTT Got event: %s" % str(msg.payload))
+                timestamp = track['tst']
+                if timestamp > owntracks_reader.latest_event_time:
+                    owntracks_reader.latest_event_time = timestamp
+                    owntracks_reader.publish_event(track)
+            else:
+                if track['_type'] == 'location':
+                    owntracks_reader.get_logger().info(f"MQTT Got track: %s" % str(msg.payload))
+                    timestamp = track['tst']
+                    if timestamp > owntracks_reader.latest_track_time:
+                        owntracks_reader.latest_event_time = timestamp
+                        owntracks_reader.publish_track(track)
+            
+def on_publish(client, obj, mid):
+        global owntracks_reader
+        if owntracks_reader == None:
+            print(f"MQTT Sent: %s" % str(mid))
+        else:
+            owntracks_reader.get_logger().info(f"MQTT Sent: %s" % str(mid))
+            
+def on_subscribe(client, obj, mid, granted_qos):
+        global owntracks_reader
+        if owntracks_reader == None:
+            print(f"MQTT Subscribed: %s" % str(mid) + " " + str(granted_qos))
+        else:
+            owntracks_reader.get_logger().info(f"MQTT Subscribed: %s" % str(mid) + " " + str(granted_qos))
+
+def on_log(client, obj, level, string):
+        global owntracks_reader
+        if owntracks_reader == None:
+            print(f"MQTT => %s" % string)
+        else:
+            owntracks_reader.get_logger().debug(f"MQTT: %s" % string)
+
+
+def main(args=None): 
+          
+    rclpy.init(args=args)
+    
+    #the  mqtt client
+    mqtt_client = mqtt.Client()
+
+    # Assign event callbacks
+    mqtt_client.on_message = on_message
+    mqtt_client.on_connect = on_connect
+    mqtt_client.on_publish = on_publish
+    mqtt_client.on_subscribe = on_subscribe
+    mqtt_client.on_log = on_log
+    
+    # the ROS node
+    global owntracks_reader 
     owntracks_reader = OwnTracksMQTTReader()
 
-    # rclpy.spin(owntracks_reader)
-    mqtt_ret = 0
-    while mqtt_ret == 0:
+    while owntracks_reader.need_mqtt_connect:
         rclpy.spin_once(owntracks_reader)
         if owntracks_reader.need_mqtt_settings == False:
-            if owntracks_reader.need_mqtt_connect == False:
-                mqtt_ret = owntracks_reader.mqtt_client.loop()
-            else:
-                owntracks_reader.connect_mqtt()                   
-
+            if owntracks_reader.need_mqtt_connect:
+                owntracks_reader.get_logger().info(f"Connecting to: %s" % owntracks_reader.url_str )
+                url = urllib.parse.urlparse(owntracks_reader.url_str)
+                # Connect
+                mqtt_client.username_pw_set(url.username, url.password)
+                mqtt_client.connect(url.hostname, url.port)
+                # Start subscribe, with QoS level 0
+                mqtt_client.subscribe(owntracks_reader.topic, 0)
+                mqtt_client.subscribe(owntracks_reader.topic + "/event", 0)
+                owntracks_reader.need_mqtt_connect = False
+                mqtt_client.loop_start() # spawns a thread to handle MQTT  
+                       
+    rclpy.spin(owntracks_reader)
+    
     owntracks_reader.destroy_node()
     rclpy.shutdown()
 
-        
