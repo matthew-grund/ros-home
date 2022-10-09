@@ -18,10 +18,10 @@ import xmltodict
 import time
 import sys
 
-class DeviceDiscoverer(Node):
+class NetworkDeviceDiscoverer(Node):
 
     def __init__(self):
-        super().__init__('home_discover')
+        super().__init__('network_discover')
         self.publisher_devices = self.create_publisher(String, 'net_devices', 10)
         self.timer_period = 17.0  # seconds
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
@@ -310,7 +310,7 @@ class DeviceDiscoverer(Node):
 def main(args=None):
     rclpy.init(args=args)
 
-    home_discover = DeviceDiscoverer()
+    home_discover = NetworkDeviceDiscoverer()
 
     rclpy.spin(home_discover)
 

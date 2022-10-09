@@ -5,8 +5,7 @@
 #
 import rclpy
 from rclpy.node import Node
-from std_msgs.msg import String
-import bluetooth    
+from std_msgs.msg import String 
 import json
 
 class OccupancyTracker(Node):

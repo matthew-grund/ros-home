@@ -70,8 +70,8 @@ class EventDetector(Node):
 
         self.publisher_events = self.create_publisher(String, 'events', 10)
         self.period_name = ""
-        timer_period = 10.0  # seconds
-        self.timer = self.create_timer(timer_period, self.timer_callback)
+        self.timer_period = 10.0  # seconds
+        self.timer = self.create_timer(self.timer_period, self.timer_callback)
         self.i = 0
         self.dev_index = 0
         self.event_index = 0
