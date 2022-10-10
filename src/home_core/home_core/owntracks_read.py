@@ -32,8 +32,9 @@ class OwnTracksMQTTReader(Node):
         self.need_mqtt_settings = True
         self.need_mqtt_connect = True
         
-        self.latest_event_time = 0
-        self.latest_track_time = 0
+        self.last_event_time = 0
+        self.last_track_time = 0
+        self.last_region = "Earth"
         
     def settings_callback(self,msg):
         msg = json.loads(msg.data)
@@ -67,10 +68,12 @@ class OwnTracksMQTTReader(Node):
             dir = " Departed "
         else:
             e['action'] = 'INFILTRATE'
-            dir = " Arrived in "
+            dir = " Arrived "
         e['region'] = event['desc']    
         e['description'] = event['tid'].upper() + dir + event['desc']
         self.publish_msg(e)
+        self.last_event_time = event['tst']
+        
         
     def publish_track(self,track):
         owntracks_reader.get_logger().info(f"Publishing new track: %s" % json.dumps(track))
@@ -92,7 +95,35 @@ class OwnTracksMQTTReader(Node):
         if 'inregions' in track:
             t['region'] = track['inregions'][0]
         else:
-            t['region'] = 'Earth'          
+            # "SSID": "9C Riverview"
+            if 'SSID' in track:
+                if track['SSID'] == '9C Riverview':
+                    t['region'] = 'Home'
+                elif track['SSID'] == 'eduroam': 
+                    t['region'] = 'Work'
+                else:        
+                    t['region'] = 'Earth'   
+            else:        
+                t['region'] = 'Earth'  
+        
+        # perhaps send an event instead?
+        if (self.last_region != t['region']) and ((int(track['tst']) - int(self.last_event_time)) > 180) :
+            t['type'] = "EVENT"
+            if t['region'] == 'Earth':
+                t['action'] = 'EXFILTRATE'
+                dir = " Departed "
+                action_region = self.last_region
+            else:
+                t['action'] = 'INFILTRATE'
+                dir = " Arrived "
+                action_region = t['region']
+            t['description'] = track['tid'].upper() + dir + action_region       
+            self.last_event_time = track['tst']
+        else:
+            self.last_track_time = track['tst']
+        self.last_region = t['region']
+            
+        # ship it            
         self.publish_msg(t)
         
     def publish_msg(self,payload_dict):
@@ -123,15 +154,13 @@ def on_message(client, obj, msg):
             if 'event' in track:
                 owntracks_reader.get_logger().info(f"MQTT Got event: %s" % str(msg.payload))
                 timestamp = track['tst']
-                if timestamp > owntracks_reader.latest_event_time:
-                    owntracks_reader.latest_event_time = timestamp
+                if timestamp > owntracks_reader.last_event_time:
                     owntracks_reader.publish_event(track)
             else:
                 if track['_type'] == 'location':
                     owntracks_reader.get_logger().info(f"MQTT Got track: %s" % str(msg.payload))
                     timestamp = track['tst']
-                    if timestamp > owntracks_reader.latest_track_time:
-                        owntracks_reader.latest_event_time = timestamp
+                    if timestamp > owntracks_reader.last_track_time:
                         owntracks_reader.publish_track(track)
             
 def on_publish(client, obj, mid):

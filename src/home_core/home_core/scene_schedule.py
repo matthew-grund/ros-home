@@ -41,6 +41,7 @@ class HomeScheduler(Node):
         self.raw_schedule = {}
         self.today_schedule = {}
 
+
     def timer_callback(self):
         msg = String()
         m={}
@@ -59,6 +60,7 @@ class HomeScheduler(Node):
         self.get_logger().info('Publishing schedule with %d scenes' % len(m['payload']['scenes']))
         self.i += 1
         self.need_config_location = True
+
 
     def config_listener_callback(self,msg):
         msg = json.loads(msg.data)
