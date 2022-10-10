@@ -54,7 +54,7 @@ class HomeObserver(Node):
                 if "home_ws/install/home_" in str(p_cl_py):
                     # self.get_logger().info(f"node %s[%d] => %s" % (p.name(), pid, str(p_cl_py))) 
                     self.current_nodes[p.name() + '['+ str(pid) + ']' ] = p_cl_py.append(p_dict['status'])
-        self.get_logger().info(f"Currently %d ROS HOME nodes running." % len(self.current_nodes))
+        self.get_logger().info(f"Monitor: %d ROS HOME nodes running." % len(self.current_nodes))
         msg = Int32()
         msg.data = len(self.current_nodes)
         self.publisher_nodes.publish(msg)     # a number, for plotting, etc.

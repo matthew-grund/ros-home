@@ -19,6 +19,7 @@ class EventDetector(Node):
         super().__init__('home_event_detect')
         self.new_devices=[]
         self.known_devices=[]
+        self.known_nodes={}
         self.subscription_devices = self.create_subscription(
             String,
             'net_devices',
@@ -67,6 +68,14 @@ class EventDetector(Node):
             self.wx_alerts_callback,
             10)
         self.subscription_wx_alerts # prevent unused variable warning
+
+        self.subscription_node_list = self.create_subscription(
+            String,
+            'node_list',
+            self.node_list_callback,
+            10)
+        self.subscription_node_list # prevent unused variable warning
+
 
         self.publisher_events = self.create_publisher(String, 'events', 10)
         self.period_name = ""
@@ -188,6 +197,23 @@ class EventDetector(Node):
         #self.publish_event('WEATHER','INFO','NEW ALERT: %s - %.1fF'% (wx['textDescription'],wx['temperature']['value']*9/5+32),wx)
         self.get_logger().info('Alert: %s' % msg.data)
 
+    def node_list_callback(self,msg):
+        m = json.loads(msg.data)
+        node_list = m['payload']
+        # add new nodes
+        for node in node_list:
+            if node not in self.known_nodes:
+                # add it
+                self.known_nodes[node] = node_list[node]
+                self.get_logger().warning(f"New ROS HOME node found: %s" % str(node))
+        # find lost nodes
+        for known in self.known_nodes:
+            if known not in node_list:
+                self.get_logger().error(f"ROS HOME node crashed: %s" % str(known))
+                self.publish_event('NODE','ERROR',f"ROS HOME node %s crashed!" % str(known), self.known_nodes[known])
+                # TODO: restart the node, or do something else sensible
+                del self.known_nodes[known]
+                
     def detect_device_event(self):
         known_len = len(self.known_devices)
         new_len = len(self.new_devices)
