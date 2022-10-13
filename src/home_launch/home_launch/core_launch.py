@@ -73,8 +73,8 @@ def generate_launch_description():
     ld.add_action(schedule_node)
     ld.add_action(event_node)
     ld.add_action(sms_node)
-    ld.add_action(config_node)
     ld.add_action(owntracks_node)
     ld.add_action(monitor_node)
+    ld.add_action(config_node)
 
     return ld

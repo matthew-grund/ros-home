@@ -207,12 +207,15 @@ class EventDetector(Node):
                 self.known_nodes[node] = node_list[node]
                 self.get_logger().warning(f"New ROS HOME node found: %s" % str(node))
         # find lost nodes
+        lost_nodes=[]
         for known in self.known_nodes:
             if known not in node_list:
                 self.get_logger().error(f"ROS HOME node crashed: %s" % str(known))
                 self.publish_event('NODE','ERROR',f"ROS HOME node %s crashed!" % str(known), self.known_nodes[known])
                 # TODO: restart the node, or do something else sensible
-                del self.known_nodes[known]
+                lost_nodes.append(known)
+        for lost in lost_nodes:
+            del self.known_nodes[lost]
                 
     def detect_device_event(self):
         known_len = len(self.known_devices)
