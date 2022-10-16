@@ -34,7 +34,7 @@ def generate_launch_description():
         executable="config"
     )
 
-    ld.add_action(discovery_node)
+    # ld.add_action(discovery_node)
     ld.add_action(weather_node)
     ld.add_action(sun_node)
     ld.add_action(event_node)
