@@ -9,6 +9,7 @@ from std_msgs.msg import String
 import smtplib
 import ssl
 import json
+import datetime
 class SMSMessager(Node):
 
     def __init__(self):
@@ -47,12 +48,15 @@ class SMSMessager(Node):
             self.dest_mail = msg['payload']['Recipient']['address']
             self.need_config = False
             self.get_logger().info(f"Got config: {self.sender_mail} sending to {self.dest_mail}")
+            # TODO - add people config
 
     def send(self, subject, content):
+        now = datetime.datetime.now()
+        now_str = now.strftime("%H%M")
         ssl_context = ssl.create_default_context()
         service = smtplib.SMTP_SSL(self.smtp_server_domain_name, self.port, context=ssl_context)
         service.login(self.sender_mail, self.password)
-        result = service.sendmail(self.sender_mail, self.dest_mail, f"Subject: {subject}\n{content}")
+        result = service.sendmail(self.sender_mail, self.dest_mail, f"Subject: {subject}\n[{now_str}]  {content}")
         service.quit()
         self.get_logger().info(f"Sending {subject}:{content}")
 
