@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>989</width>
+    <height>717</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>989</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuHome">
+    <property name="title">
+     <string>Home</string>
+    </property>
+    <addaction name="actionSystem"/>
+    <addaction name="actionWeather"/>
+    <addaction name="actionConfigure_2"/>
+    <addaction name="actionEvents"/>
+    <addaction name="actionRooms"/>
+   </widget>
+   <widget class="QMenu" name="menuPeople">
+    <property name="title">
+     <string>People</string>
+    </property>
+    <addaction name="actionConfigure_3"/>
+   </widget>
+   <widget class="QMenu" name="menuLights">
+    <property name="title">
+     <string>Scenes</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuLighting">
+    <property name="title">
+     <string>Lighting</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuTemperature">
+    <property name="title">
+     <string>Temperature</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuSecurity">
+    <property name="title">
+     <string>Security</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuDevices">
+    <property name="title">
+     <string>Devices</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuEvents">
+    <property name="title">
+     <string>Events</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuDiagnostics">
+    <property name="title">
+     <string>Diagnostics</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuMedia">
+    <property name="title">
+     <string>Media</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuAbout">
+    <property name="title">
+     <string>About</string>
+    </property>
+   </widget>
+   <addaction name="menuHome"/>
+   <addaction name="menuPeople"/>
+   <addaction name="menuLights"/>
+   <addaction name="menuLighting"/>
+   <addaction name="menuTemperature"/>
+   <addaction name="menuMedia"/>
+   <addaction name="menuSecurity"/>
+   <addaction name="menuDevices"/>
+   <addaction name="menuEvents"/>
+   <addaction name="menuDiagnostics"/>
+   <addaction name="menuAbout"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionConfigure">
+   <property name="text">
+    <string>Configure</string>
+   </property>
+  </action>
+  <action name="actionSystem">
+   <property name="text">
+    <string>System</string>
+   </property>
+  </action>
+  <action name="actionWeather">
+   <property name="text">
+    <string>Weather</string>
+   </property>
+  </action>
+  <action name="actionConfigure_2">
+   <property name="text">
+    <string>Configure</string>
+   </property>
+  </action>
+  <action name="actionEvents">
+   <property name="text">
+    <string>Events</string>
+   </property>
+  </action>
+  <action name="actionConfigure_3">
+   <property name="text">
+    <string>Add...</string>
+   </property>
+  </action>
+  <action name="actionConfigure_4">
+   <property name="text">
+    <string>Configure</string>
+   </property>
+  </action>
+  <action name="actionScenes">
+   <property name="text">
+    <string>Scenes</string>
+   </property>
+  </action>
+  <action name="actionRooms">
+   <property name="text">
+    <string>Rooms</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
