@@ -24,22 +24,23 @@ class HomeConfigurator(Node):
     def timer_callback(self):
         ls = os.listdir(self.folder)
         for f in ls:
-            is_new = True
-            is_updated = False
-            fpath = self.folder + "/" +  f
-            for fname in self.files:
-                if fname == f:
-                    is_new = False
-            mt = os.path.getmtime(fpath)
-            if not is_new:
-                if self.files[f] < mt:
-                    is_updated = True
-            if is_new or is_updated:
-                settings = self.load_ini_file(fpath)
-                self.files[f] = mt
-                settings['filepath'] = fpath
-                settings['type'] =  (f.rsplit('.',1)[0]).upper()   
-                self.send_settings_msg(settings)
+            if f.endswith(".ini") or f.endswith(".INI"):
+                is_new = True
+                is_updated = False
+                fpath = self.folder + "/" +  f
+                for fname in self.files:
+                    if fname == f:
+                        is_new = False
+                mt = os.path.getmtime(fpath)
+                if not is_new:
+                    if self.files[f] < mt:
+                        is_updated = True
+                if is_new or is_updated:
+                    settings = self.load_ini_file(fpath)
+                    self.files[f] = mt
+                    settings['filepath'] = fpath
+                    settings['type'] =  (f.rsplit('.',1)[0]).upper()   
+                    self.send_settings_msg(settings)
 
     def load_ini_file(self,filepath):
         settings = configobj.ConfigObj(filepath)
