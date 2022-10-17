@@ -76,6 +76,13 @@ class EventDetector(Node):
             10)
         self.subscription_node_list # prevent unused variable warning
 
+        self.subscription_lighting_status = self.create_subscription(
+            String,
+            'lighting_status',
+            self.lighting_status_callback,
+            10)
+        self.subscription_lighting_status # prevent unused variable warning
+
 
         self.publisher_events = self.create_publisher(String, 'events', 10)
         self.period_name = ""
@@ -87,6 +94,8 @@ class EventDetector(Node):
         self.publisher_devices = self.create_publisher(String, 'known_net_devices', 10)
         self.wx_latest_conditions = ""
         self.wx_recent_forecasts = {}
+        self.lights = []
+        self.num_lights_on = -1
         
     def timer_callback(self):
         self.i += 1
@@ -216,6 +225,26 @@ class EventDetector(Node):
                 lost_nodes.append(known)
         for lost in lost_nodes:
             del self.known_nodes[lost]
+             
+    def lighting_status_callback(self,msg):
+        m = json.loads(msg.data)         
+        lights = m['payload']['lights']
+        num_on = 0 
+        num_off = 0
+        num_lights = len(lights)
+        for light in lights:
+            if light['state'] == 0:
+                num_off += 1
+            else:    
+                num_on += 1
+            if self.num_lights_on != num_on:   # FIXME: better change detect on light status       
+                if num_on == num_lights:
+                    self.publish_event('LIGHTS','WARNING',f"All %s lights are on" % m['payload']['type'],lights)
+                if num_off == num_lights:
+                    self.publish_event('LIGHTS','INFO',f"All %s lights are off" % m['payload']['type'],lights)
+        self.get_logger().error(f"Lights: %d of lights %d on from %s" %(num_on,num_lights,m['payload']['type']))    
+        self.lights = lights  # FIXME: merge each lighting status message into master list    
+        self.num_lights_on = num_on
                 
     def detect_device_event(self):
         known_len = len(self.known_devices)
