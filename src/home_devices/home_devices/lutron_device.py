@@ -27,7 +27,7 @@ class LutronDevice(Node):
         self.lutron_bridgecertfile = ""
         self.lutron_ipaddress = ""
         self.do_need_config_msg = True
-        self.raw_device_status = {}
+        self.raw_device_status = []
         self.rooms = []
         self.lights = []
         self.device_status = {}
@@ -104,7 +104,11 @@ class LutronDevice(Node):
         m = {}
         m['index'] = self.i
         m['interval'] = self.poll_timer_period
-        m['payload'] = self.device_status
+        p={}
+        p['hub_ip'] = self.lutron_ipaddress
+        p['type'] = "LUTRON"
+        p['lights'] = self.device_status
+        m['payload'] = p
         mstr = json.dumps(m)
         msg = String()
         msg.data = mstr
@@ -114,6 +118,7 @@ class LutronDevice(Node):
         self.i += 1
         
     def process_raw_status(self):
+        devs = []
         for device_id in self.raw_device_status:
             if self.raw_device_status[device_id]['type'] != "SmartBridge":
                 ds={}
@@ -127,9 +132,10 @@ class LutronDevice(Node):
                     self.rooms.append(names[0])
                 ds['name'] = names[1]
                 if names[1] not in self.lights:
-                    self.rooms.append(names[1])
-                self.device_status[device_id] = ds
-                    
+                    self.lights.append(names[1])
+                devs.append(ds)
+        self.device_status = devs
+        
     def isnumber(self,str_to_check):
         try:
             float(str_to_check)
