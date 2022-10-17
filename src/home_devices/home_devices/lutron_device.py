@@ -3,31 +3,34 @@
 # Licensed under the BSD 2 Clause license;
 # you may not use this file except in compliance with the License.
 #
+import json
 import rclpy
 from rclpy.node import Node
 
 from std_msgs.msg import String
-
+import json
 import asyncio
 from pylutron_caseta.smartbridge import Smartbridge
 
-async def run_lutron(address,key,cert,bridge,ros2_node):
-    bridge = Smartbridge.create_tls(
-        "YOUR_BRIDGE_IP", "caseta.key", "caseta.crt", "caseta-bridge.crt"
-    )
+
 
 class LutronDevice(Node):
     def __init__(self):
         super().__init__('lutron_device')
-        self.publisher_ = self.create_publisher(String, 'lutron_device_status', 10)
-        timer_period = 2.5  # seconds
-        self.timer = self.create_timer(timer_period, self.timer_callback)
+        self.publisher_status = self.create_publisher(String, 'lighting_status', 10)
+        self.poll_timer_period = 5  # seconds
+        self.poll_timer = self.create_timer(self.poll_timer_period, self.poll_timer_callback)
         self.i = 0
+        self.num_commands = 0 
         self.lutron_keyfile = ""
         self.lutron_certfile = ""
         self.lutron_bridgecertfile = ""
         self.lutron_ipaddress = ""
         self.do_need_config_msg = True
+        self.raw_device_status = {}
+        self.rooms = []
+        self.device_status = {}
+        
         # subscribe to config
         self.config_sub = self.create_subscription(
             String,
@@ -35,45 +38,87 @@ class LutronDevice(Node):
             self.config_callback,
             10)
         self.config_sub  # prevent unused variable warning
-        
+                
         # subscribe to commands
         self.command_sub = self.create_subscription(
             String,
-            'commands',
-            self.commannd_callback,
+            'lighting_commands',
+            self.command_callback,
             10)
         self.command_sub  # prevent unused variable warning
+        # make  an asyncio event loop
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
         
-    def timer_callback(self):
+    #  LUTRON.INI: {"index": 8, 
+    #               "interval": 0.5, 
+    #               "payload": {"filepath": "/data/home_ws/config/lutron.ini", 
+    #                           "type": "LUTRON", 
+    #                           "Bridge": {"address": "10.0.0.180"}, 
+    #                           "Key": {"filepath": "/data/home_ws/aux/10.0.0.180.key"}, 
+    #                           "Certificate": {"filepath": "/data/home_ws/aux/10.0.0.180.cert"}, 
+    #                           "Bridge Certificate": {"filepath": "/data/home_ws/aux/10.0.0.180-bridge.crt"}}}
+    def config_callback(self,msg):
+        msg = json.loads(msg.data)
+        if msg['payload']['type'] == "LUTRON":
+            self.lutron_ipaddress = msg['payload']['Bridge']['address']
+            self.lutron_certfile = msg['payload']['Certificate']['filepath']
+            self.lutron_keyfile = msg['payload']['Key']['filepath']
+            self.lutron_bridgecertfile = msg['payload']['Bridge Certificate']['filepath']
+            self.do_need_config_msg = False
+            self.get_logger().info(f"Got config: SmartBridge is {self.lutron_ipaddress}" )
+
+    def command_callback(self,msg):
+        self.num_commands += 1     
+     
+        
+    async def poll(self):
+        if self.do_need_config_msg:
+            return
+        bridge = Smartbridge.create_tls(self.lutron_ipaddress, self.lutron_keyfile, self.lutron_certfile, self.lutron_bridgecertfile)    
+        await bridge.connect()
+        self.raw_device_status = bridge.get_devices()
+        await bridge.close()
+
+    def poll_timer_callback(self):
+        if self.do_need_config_msg:
+            return
+        self.loop.run_until_complete(self.poll())
+        self.process_raw_status()
+        m = {}
+        m['index'] = self.i
+        m['interval'] = self.poll_timer_period
+        m['payload'] = self.device_status
+        mstr = json.dumps(m)
         msg = String()
-        msg.data = 'Light Status: %d' % self.i
-        self.publisher_.publish(msg)
-        self.get_logger().info('Publishing: "%s"' % msg.data)
+        msg.data = mstr
+        self.publisher_status.publish(msg)
+        self.get_logger().info('Lutron publishing status for %d lighting devices' % len(self.device_status))
+        self.get_logger().info(f"Lutron device status: %s" % mstr)
         self.i += 1
-
-    def need_config_msg(self):
-        return self.do_need_config_msg
-    
-    
-async def ros_spin_once(minimal_publisher):
-    rclpy.spin_once(minimal_publisher, timeout_sec=0)
-
-async def run_ros_node(ros2_node):
-    while True:
-        await ros_spin_once(ros2_node)
-        await asyncio.sleep(0)
-
-async def main(args=None):
+        
+    def process_raw_status(self):
+        for device_id in self.raw_device_status:
+            if self.raw_device_status[device_id]['type'] != "SmartBridge":
+                ds={}
+                ds['id'] = device_id
+                ds['type'] = self.raw_device_status[device_id]['type']
+                ds['state'] = self.raw_device_status[device_id]['current_state']
+                rawname = self.raw_device_status[device_id]['name']
+                names = rawname.split('_')
+                ds['room'] = names[0]
+                ds['name'] = names[1]
+                self.device_status[device_id] = ds    
+        
+def main(args=None):
     rclpy.init(args=args)
-    device = LutronDevice()
-    task_ros2_node = asyncio.create_task(run_ros_node(device))
-    # just the ros task runs, until we get the config, and can open the lutron
-    while device.need_config_msg():
-        await asyncio.sleep(0)
-    task_lutron_bridge = asyncio.create_task(run_lutron(device))
-    await asyncio.gather(task_ros2_node, task_lutron_bridge)
-    device.destroy_node()
+
+    lutron_device = LutronDevice()
+
+    rclpy.spin(lutron_device)
+
+    lutron_device.destroy_node()
     rclpy.shutdown()
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    main()
