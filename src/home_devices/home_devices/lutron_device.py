@@ -112,7 +112,7 @@ class LutronDevice(Node):
         msg = String()
         msg.data = mstr
         self.publisher_status.publish(msg)
-        self.get_logger().info('Lutron publishing status for %d lighting devices' % len(self.device_status))
+        self.get_logger().info('Lutron publishing status for %d lights' % len(self.device_status))
         self.get_logger().info(f"Lutron device status: %s" % mstr)
         self.i += 1
         

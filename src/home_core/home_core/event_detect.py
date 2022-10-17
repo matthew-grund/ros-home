@@ -230,19 +230,16 @@ class EventDetector(Node):
         m = json.loads(msg.data)         
         lights = m['payload']['lights']
         num_on = 0 
-        num_off = 0
         num_lights = len(lights)
         for light in lights:
-            if light['state'] == 0:
-                num_off += 1
-            else:    
+            if light['state'] != 0:  
                 num_on += 1
-            if self.num_lights_on != num_on:   # FIXME: better change detect on light status       
-                if num_on == num_lights:
-                    self.publish_event('LIGHTS','WARNING',f"All %s lights are on" % m['payload']['type'],lights)
-                if num_off == num_lights:
-                    self.publish_event('LIGHTS','INFO',f"All %s lights are off" % m['payload']['type'],lights)
-        self.get_logger().error(f"Lights: %d of lights %d on from %s" %(num_on,num_lights,m['payload']['type']))    
+        if self.num_lights_on != num_on:   # FIXME: better change detect on light status       
+            if num_on == num_lights:
+                self.publish_event('LIGHTS','WARNING',f"All %s lights are on" % m['payload']['type'],lights)
+            if num_on == 0:
+                self.publish_event('LIGHTS','INFO',f"All %s lights are off" % m['payload']['type'],lights)
+        self.get_logger().info(f"Lights: %d of %d lights on from %s" %(num_on,num_lights,m['payload']['type']))    
         self.lights = lights  # FIXME: merge each lighting status message into master list    
         self.num_lights_on = num_on
                 
