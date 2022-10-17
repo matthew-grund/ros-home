@@ -29,6 +29,7 @@ class LutronDevice(Node):
         self.do_need_config_msg = True
         self.raw_device_status = {}
         self.rooms = []
+        self.lights = []
         self.device_status = {}
         
         # subscribe to config
@@ -62,15 +63,30 @@ class LutronDevice(Node):
         msg = json.loads(msg.data)
         if msg['payload']['type'] == "LUTRON":
             self.lutron_ipaddress = msg['payload']['Bridge']['address']
+            self.device_status['hub'] = self.lutron_ipaddress
             self.lutron_certfile = msg['payload']['Certificate']['filepath']
             self.lutron_keyfile = msg['payload']['Key']['filepath']
             self.lutron_bridgecertfile = msg['payload']['Bridge Certificate']['filepath']
             self.do_need_config_msg = False
             self.get_logger().info(f"Got config: SmartBridge is {self.lutron_ipaddress}" )
 
+
+    async def set(self,id,value):
+        if self.do_need_config_msg:
+            return        
+        bridge = Smartbridge.create_tls(self.lutron_ipaddress, self.lutron_keyfile, self.lutron_certfile, self.lutron_bridgecertfile)    
+        await bridge.connect()
+        ret = bridge.set_value(str(id),int(value))
+        await bridge.close()
+   
+
     def command_callback(self,msg):
         self.num_commands += 1     
-     
+        if self.do_need_config_msg:
+            self.get_logger().error(f'Lutron got lighting command before settings message!')
+            return
+        self.get_logger().info(f'Lutron got lighting command %s' % msg.data)
+             
         
     async def poll(self):
         if self.do_need_config_msg:
@@ -107,9 +123,20 @@ class LutronDevice(Node):
                 rawname = self.raw_device_status[device_id]['name']
                 names = rawname.split('_')
                 ds['room'] = names[0]
+                if names[0] not in self.rooms:
+                    self.rooms.append(names[0])
                 ds['name'] = names[1]
-                self.device_status[device_id] = ds    
-        
+                if names[1] not in self.lights:
+                    self.rooms.append(names[1])
+                self.device_status[device_id] = ds
+                    
+    def isnumber(self,str_to_check):
+        try:
+            float(str_to_check)
+            return True
+        except ValueError:
+            return False
+            
 def main(args=None):
     rclpy.init(args=args)
 
