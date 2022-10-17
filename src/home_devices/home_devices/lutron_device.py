@@ -63,7 +63,6 @@ class LutronDevice(Node):
         msg = json.loads(msg.data)
         if msg['payload']['type'] == "LUTRON":
             self.lutron_ipaddress = msg['payload']['Bridge']['address']
-            self.device_status['hub'] = self.lutron_ipaddress
             self.lutron_certfile = msg['payload']['Certificate']['filepath']
             self.lutron_keyfile = msg['payload']['Key']['filepath']
             self.lutron_bridgecertfile = msg['payload']['Bridge Certificate']['filepath']
