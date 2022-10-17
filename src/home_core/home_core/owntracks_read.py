@@ -73,7 +73,7 @@ class OwnTracksMQTTReader(Node):
         e['description'] = event['tid'].upper() + dir + event['desc']
         self.publish_msg(e)
         self.last_event_time = event['tst']
-        
+        self.last_region = e['region']
         
     def publish_track(self,track):
         owntracks_reader.get_logger().info(f"Publishing new track: %s" % json.dumps(track))
@@ -105,6 +105,7 @@ class OwnTracksMQTTReader(Node):
                     t['region'] = 'Earth'   
             else:        
                 t['region'] = 'Earth'  
+        self.last_region = t['region']
         
         # perhaps send an event instead?
         if (self.last_region != t['region']) and ((int(track['tst']) - int(self.last_event_time)) > 180) :
