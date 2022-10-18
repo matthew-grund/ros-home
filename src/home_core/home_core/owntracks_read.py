@@ -105,7 +105,6 @@ class OwnTracksMQTTReader(Node):
                     t['region'] = 'Earth'   
             else:        
                 t['region'] = 'Earth'  
-        self.last_region = t['region']
         
         # perhaps send an event instead?
         if (self.last_region != t['region']) and ((int(track['tst']) - int(self.last_event_time)) > 180) :
