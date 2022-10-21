@@ -92,13 +92,19 @@ class LutronDevice(Node):
             return
         bridge = Smartbridge.create_tls(self.lutron_ipaddress, self.lutron_keyfile, self.lutron_certfile, self.lutron_bridgecertfile)    
         await bridge.connect()
-        self.raw_device_status = bridge.get_devices()
+        try:
+            self.raw_device_status = bridge.get_devices()
+        except asyncio.TimeoutError:
+            self.raw_device_status = {}
+            self.get_logger().warn(f"Lutron: timeout while fetching device status")    
         await bridge.close()
 
     def poll_timer_callback(self):
         if self.do_need_config_msg:
             return
         self.loop.run_until_complete(self.poll())
+        if len(self.raw_device_status) == 0:
+            return
         self.process_raw_status()
         m = {}
         m['index'] = self.i
