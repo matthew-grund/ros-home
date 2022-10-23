@@ -3,9 +3,9 @@
 <package format="3">
   <name>home_ui</name>
   <version>0.0.0</version>
-  <description>TODO: Package description</description>
+  <description>Home UI provides user iinterfaces to a running ROS Home community</description>
   <maintainer email=""matthew.grund77@gmail.com"">matt</maintainer>
-  <license>TODO: License declaration</license>
+  <license>BSD-2-Clause</license>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

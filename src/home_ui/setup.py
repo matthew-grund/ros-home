@@ -13,10 +13,10 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='matt',
+    maintainer='Matthew Grund',
     maintainer_email='"matthew.grund77@gmail.com"',
-    description='TODO: Package description',
-    license='TODO: License declaration',
+    description='Home UI provides user iinterfaces to a running ROS Home community',
+    license='BSD-2-Clause',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
