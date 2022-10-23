@@ -41,6 +41,7 @@ class ROSHomeWindow(qtw.QMainWindow):
             int(self.screen_size.width()*0.5),
             int(self.screen_size.height()*0.87)
             )
+        
         self.setup_actions()
         self.setup_top_menu()
      
@@ -109,10 +110,6 @@ class ROSHomeWindow(qtw.QMainWindow):
             for action in self.action_dict[menu]:
                 m.addAction(self.action_dict[menu][action])
                 
-    def setup_statusbar(self):
-        self.status_bar = qtw.QStatusBar()    
-        self.setStatusBar(self.status_bar)
-        self.status_bar.showMessage("Fuck off.",30000)
         
     def style_menu(self, menu):
         menu.setStyleSheet(

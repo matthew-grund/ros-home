@@ -18,7 +18,7 @@ class LutronDevice(Node):
     def __init__(self):
         super().__init__('lutron_device')
         self.publisher_status = self.create_publisher(String, 'lighting_status', 10)
-        self.poll_timer_period = 5  # seconds
+        self.poll_timer_period = 6  # seconds
         self.poll_timer = self.create_timer(self.poll_timer_period, self.poll_timer_callback)
         self.i = 0
         self.num_commands = 0 
@@ -90,15 +90,23 @@ class LutronDevice(Node):
     async def poll(self):
         if self.do_need_config_msg:
             return
-        bridge = Smartbridge.create_tls(self.lutron_ipaddress, self.lutron_keyfile, self.lutron_certfile, self.lutron_bridgecertfile)    
-        await bridge.connect()
+        bridge = Smartbridge.create_tls(self.lutron_ipaddress, self.lutron_keyfile, self.lutron_certfile, self.lutron_bridgecertfile)
+        try:    
+            await bridge.connect()
+        except asyncio.TimeoutError:   
+            self.raw_device_status = {}
+            self.get_logger().warn(f"Lutron: timeout while fetching device status")                    
         try:
             self.raw_device_status = bridge.get_devices()
         except asyncio.TimeoutError:
             self.raw_device_status = {}
             self.get_logger().warn(f"Lutron: timeout while fetching device status")    
-        await bridge.close()
-
+        try:     
+            await bridge.close()
+        except asyncio.TimeoutError:
+            self.raw_device_status = {}
+            self.get_logger().warn(f"Lutron: timeout while fetching device status")  
+            
     def poll_timer_callback(self):
         if self.do_need_config_msg:
             return
