@@ -13,15 +13,13 @@ setup(
     ],
     install_requires=['setuptools'],
     zip_safe=True,
-    maintainer='Matthew Grund',
+    maintainer='matt',
     maintainer_email='"matthew.grund77@gmail.com"',
-    description='Home UI provides configuration, introspection and monitoring tools for ROS Home',
-    license='BSD-2-clause',
+    description='TODO: Package description',
+    license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-                'tui = home_ui.home_tui:main',
-                'qtui = home_ui.home_qtui:main'
         ],
     },
 )

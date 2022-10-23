@@ -4,7 +4,7 @@ package_name = 'home_extras'
 
 setup(
     name=package_name,
-    version='0.0.1',
+    version='0.0.3',
     packages=[package_name],
     data_files=[
         ('share/ament_index/resource_index/packages',
@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'xevent = home_extras.extra_event_detect:main'
+            'xevent = home_extras.extra_event_detect:main',
             'stocks = home_extras.stock_track:main',
             'tides = home_extras.tide_track:main',
             'nfl = home_extras.nfl_track:main',
