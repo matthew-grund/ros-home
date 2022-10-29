@@ -25,7 +25,7 @@ class ROSHomeUI(qtw.QMainWindow, Node):
     
     def __init__(self):
         self.app = qtw.QApplication(sys.argv)
-        qtw.QMainWindow.__init__(self)
+        qtw.QMainWindow.__init__(self,'rqt_home')
         Node.__init__('rqt_home')
         self.publisher_cmds = self.create_publisher(String, 'commands', 10)
         self.config_subscription = self.create_subscription(String,
@@ -140,7 +140,7 @@ class ROSHomeUI(qtw.QMainWindow, Node):
         
 def main(args=None):
     rclpy.init(args=args)
-    home_ui = ROSHomeUI('rqt_home')
+    home_ui = ROSHomeUI()
     home_ui.show()
     home_ui.exec()
     home_ui.destroy_node()

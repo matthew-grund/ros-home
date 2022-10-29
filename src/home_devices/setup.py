@@ -16,7 +16,7 @@ setup(
     maintainer='Matthew Grund',
     maintainer_email='matthew.grund77@gmail.com',
     description='Home devices provides ROS2 node interfaces to home devices',
-    license='BSD-2-clause',
+    license='BSD-2-Clause',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
