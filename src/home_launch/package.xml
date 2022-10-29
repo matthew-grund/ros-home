@@ -4,8 +4,8 @@
   <name>home_launch</name>
   <version>0.0.3</version>
   <description>Home_launch provides home node launch files</description>
-  <maintainer email=""matthew.grund77@gmail.com"">Matthew Grund</maintainer>
-  <license>BSD-2-clause</license>
+  <maintainer email="matthew.grund77@gmail.com">Matthew Grund</maintainer>
+  <license>BSD-2-Clause</license>
 
   <exec_depend>home_core</exec_depend>
   <exec_depend>home_devices</exec_depend>

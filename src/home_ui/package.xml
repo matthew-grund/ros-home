@@ -4,7 +4,7 @@
   <name>home_ui</name>
   <version>0.0.0</version>
   <description>Home UI provides user iinterfaces to a running ROS Home community</description>
-  <maintainer email=""matthew.grund77@gmail.com"">matt</maintainer>
+  <maintainer email="matthew.grund77@gmail.com">matt</maintainer>
   <license>BSD-2-Clause</license>
 
   <test_depend>ament_copyright</test_depend>
