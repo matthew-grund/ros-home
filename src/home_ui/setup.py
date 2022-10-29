@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'rqt_home = home_ui.qtui:main',
+            'rqt_home = home_ui.rqt_home:main',
         ],
     },
 )

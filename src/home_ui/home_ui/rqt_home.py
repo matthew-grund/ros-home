@@ -21,12 +21,10 @@ import PyQt6.QtWidgets as qtw
 import PyQt6.QtCore as qtc
 import PyQt6.QtGui as qtg
 
-class ROSHomeUI(qtw.QMainWindow, Node):
-    
+class ROSHomeUI(Node):
+
     def __init__(self):
-        self.app = qtw.QApplication(sys.argv)
-        qtw.QMainWindow.__init__(self,'rqt_home')
-        Node.__init__('rqt_home')
+        super().__init__('rqt_home')
         self.publisher_cmds = self.create_publisher(String, 'commands', 10)
         self.config_subscription = self.create_subscription(String,
             'settings',
@@ -34,14 +32,51 @@ class ROSHomeUI(qtw.QMainWindow, Node):
         self.config_subscription       
         self.lighting_subscription = self.create_subscription(String,
             'lighting_status',
-            self.config_lights_callback,10)    
+            self.lighting_status_callback,10)    
         self.lighting_subscription
-        self.app.setStyleSheet(
-            '''
-            QMainWindow {background-color: #131317; color:#ffffff} ;
-            QStatusBar {background-color: #232327; color:#aaaaaa}
-            '''
-            )
+        self.spin_count = 0
+        self.lighting_msg_count = 0
+        
+    def send_command(self):
+        if len(self.commands):
+            for cmd in self.commands:
+                m = {}
+                m['index'] = self.i
+                m['interval'] = math.nan
+                p={}
+                p['type'] = "USER"
+                p['source'] = "rqt_home"
+                p['command'] = cmd
+                mstr = json.dumps(m)
+                msg = String()
+                msg.data = mstr
+                self.publisher_cmds.publish(msg)
+                self.get_logger().info('rqt_home publishing command :%s' % cmd)
+            self.commands = []
+            
+    def config_listener_callback(self,msg):
+        msg = json.loads(msg.data)
+        if msg['payload']['type'] == "RQTHOME":
+            self.do_need_config_msg = False
+            self.get_logger().info(f"Got config: {msg}" )
+
+    def lighting_status_callback(self,msg):
+        msg = json.loads(msg.data)
+        self.get_logger().info(f"Got lighting status: {msg}" )
+        self.lighting_msg_count +=1 
+
+
+#######################################################################
+#
+#     The class ROSHomeUI is the main class in this app. It owns a ROS
+#     node that gets spin_once() on a QT timer.
+#
+class RQTHomeUI(qtw.QMainWindow):
+    
+    def __init__(self):
+        self.app = qtw.QApplication(sys.argv)
+        qtw.QMainWindow.__init__(self)
+        
         self.title = "ROS Home"
         self.description = "Interface to ROS Home"
         self.screen = self.app.primaryScreen()
@@ -51,14 +86,23 @@ class ROSHomeUI(qtw.QMainWindow, Node):
             int(self.screen_size.width()*0.5),
             int(self.screen_size.height()*0.87)
             )
+        
         self.setup_actions()
         self.setup_top_menu()
+        
+        self.node = ROSHomeUI()
         self.ros_spin_timer = qtc.QTimer()
-        self.ros_spin_timer.singleShot(100, self.ros_action)
+        self.ros_spin_timer.singleShot(50, self.ros_action)
+        self.ros_spin_count = 0
         
     def ros_action(self):
-        rclpy.spin_once(self)    
-        self.ros_spin_timer.singleShot(0,self.ros_action)
+        # do ros stuff, then check for ros results
+        rclpy.spin_once(self.node,timeout_sec=0.100) 
+        self.node.spin_count += 1 
+        if self.node.spin_count > 37:
+            print(f"total light messages: %d" % self.node.lighting_msg_count)   
+            self.node.spin_count = 0 
+        self.ros_spin_timer.singleShot(50,self.ros_action)
         
     def ui_action(self,parent_label, label):
         a = qtg.QAction(label,self)
@@ -113,7 +157,7 @@ class ROSHomeUI(qtw.QMainWindow, Node):
         self.ui_action("help","about")
     
     def ui_act(self,parent_name, action_name):   
-        print(parent_name + ":" + action_name)    
+        print(parent_name + ":" + action_name)
                        
     def setup_top_menu(self):
         self.top_menu = self.menuBar()   
@@ -125,26 +169,25 @@ class ROSHomeUI(qtw.QMainWindow, Node):
             for action in self.action_dict[menu]:
                 m.addAction(self.action_dict[menu][action])
                 
-        
     def style_menu(self, menu):
         menu.setStyleSheet(
             '''
-            QMenuBar {background-color: #333337; color:#ffffff}
-            QMenu {background-color: #434347; color:#ffffff}
+            QMenuBar { background-color: #333337 ; color:#ffffff }
+            QMenu { background-color: #434347 ; color:#ffffff }
             '''
             )
         font = menu.font()
         font.setPointSize(12)
-        #font.setBold(True)
         menu.setFont(font)
         
 def main(args=None):
     rclpy.init(args=args)
-    home_ui = ROSHomeUI()
+    home_ui = RQTHomeUI()
     home_ui.show()
-    home_ui.exec()
-    home_ui.destroy_node()
+    ret=home_ui.app.exec()
     rclpy.shutdown()
+    home_ui.node.destroy_node()
+    sys.exit(ret)
 
 if __name__ == '__main__':
     main()        
