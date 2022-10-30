@@ -5,7 +5,7 @@
   <version>0.0.4</version>
   <description>Home_core provides home device discovery, environmental observation, scene control, and notification</description>
   <maintainer email="matthew.grund77@gmail.com">Matthew Grund</maintainer>
-  <license>BSD-2-clause</license>
+  <license>BSD-2-Clause</license>
 
   <exec_depend>rclpy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
