@@ -119,7 +119,7 @@ class LutronDevice(Node):
         m['interval'] = self.poll_timer_period
         p={}
         p['hub_ip'] = self.lutron_ipaddress
-        p['type'] = "LUTRON"
+        p['type'] = "Lutron"
         p['lights'] = self.device_status
         m['payload'] = p
         mstr = json.dumps(m)
