@@ -29,15 +29,13 @@ class ROSHomeUI(Node):
         self.config_subscription = self.create_subscription(String,
             'settings',
             self.config_listener_callback,10)
-        self.config_subscription       
         self.lighting_subscription = self.create_subscription(String,
             'lighting_status',
             self.lighting_status_callback,10)    
-        self.lighting_subscription
         self.event_subscription = self.create_subscription(String,
             'events',
             self.event_listener_callback,10)
-        self.event_subscription  
+
                                                            
         self.spin_count = 0
         self.lighting_msg_count = 0
@@ -69,7 +67,7 @@ class ROSHomeUI(Node):
 
     def lighting_status_callback(self,msg):
         msg = json.loads(msg.data)
-        self.get_logger().info(f"Got lighting status: {len(msg['payload']['lights'])} lights on {msg['payload']['type']}" )
+        self.get_logger().info(f"Got status for {len(msg['payload']['lights'])} {msg['payload']['type']} lights." )
         self.latest_lighting_msg = msg
         self.lighting_msg_count +=1 
 
@@ -104,7 +102,7 @@ class RQTHomeUI(qtw.QMainWindow):
         # todo: center the app on the screen
         style_sheet ='''
             QWidget { 
-                background-color: #53565A ; 
+                background-color: #23262A ; 
                 color: white ;
             }
             #menu_clock {
@@ -126,15 +124,25 @@ class RQTHomeUI(qtw.QMainWindow):
             }
         '''
         self.app.setStyleSheet(style_sheet)
+        self.frame_style = qtw.QFrame.Shape.Panel  # Panel for debugging, NoFrame for  aclean look
        
         self.big_clock  = qtw.QLabel()
         self.big_clock.setAccessibleName("big_clock")
         self.big_clock.setObjectName("big_clock")      
         font = self.big_clock.font()
-        font.setPointSize(42)
+        font.setPointSize(48)
         self.big_clock.setFont(font)
         self.big_clock.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter | qtc.Qt.AlignmentFlag.AlignVCenter)
-        self.big_clock.setFrameStyle(qtw.QFrame.Shape.Panel)
+        self.big_clock.setFrameStyle(self.frame_style)
+               
+        self.big_date  = qtw.QLabel()
+        self.big_date.setAccessibleName("big_date")
+        self.big_date.setObjectName("big_date")      
+        font = self.big_date.font()
+        font.setPointSize(32)
+        self.big_date.setFont(font)
+        self.big_date.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter | qtc.Qt.AlignmentFlag.AlignVCenter)
+        self.big_date.setFrameStyle(self.frame_style)       
                
         self.setup_actions()
         self.setup_top_menu()
@@ -149,7 +157,6 @@ class RQTHomeUI(qtw.QMainWindow):
         self.clock_tick_timer = qtc.QTimer()
         self.clock_tick_timer.singleShot(200,self.ui_clock_timer_callback)
         
-        
     def ros_timer_callback(self):
         # do ros stuff, then check for ros results
         self.lighting_msg_count = self.ros_node.lighting_msg_count
@@ -162,18 +169,20 @@ class RQTHomeUI(qtw.QMainWindow):
     def ui_clock_timer_callback(self):
         now = datetime.now()
         self.clock_str = now.strftime("%H:%M:%S")
+        self.date_str = now.strftime("%A %B %-d")
         self.big_clock.setText(self.clock_str)
+        self.big_date.setText(self.date_str)
         self.menu_clock.setText(self.clock_str)
         self.clock_tick_timer.singleShot(999,self.ui_clock_timer_callback)
     
     def check_for_ros_msgs(self):
         if self.lighting_msg_count < self.ros_node.lighting_msg_count:
-            self.parse_lighting_msg(self.ros_node.latest_lighting_msg)
+            self.ui_parse_lighting_msg(self.ros_node.latest_lighting_msg)
         if self.event_msg_count < self.ros_node.event_msg_count:
-            self.parse_event_msg(self.ros_node.latest_event_msg)
+            self.ui_parse_event_message(self.ros_node.latest_event_msg)
         
-    def parse_lighting_msg(self,msg):
-        self.statusBar().showMessage(f"Got lighting status from {msg['payload']['type']}")
+    def ui_parse_lighting_msg(self,msg):
+        self.statusBar().showMessage(f"Got status for {len(msg['payload']['lights'])} {msg['payload']['type']} lights.")
         lights = msg['payload']['lights']
         self.num_lights_on = 0
         self.num_lights =  0
@@ -184,11 +193,11 @@ class RQTHomeUI(qtw.QMainWindow):
                self.lights_total_percent += light['state']
                self.num_lights_on += 1
         if self.num_lights > 0:
-            self.lights_total_percent /= self.num_lights
-        self.frame_dict['home']['overview']  
-        self.lighting_summary_label.setText(f'{self.num_lights_on} of {self.num_lights} lights are on ({int(self.lights_total_percent)}% light energy)')  
+            self.lights_total_percent /= self.num_lights 
+        self.lighting_summary_label.setText(
+            f"{msg['payload']['type']}: {self.num_lights_on} of {self.num_lights} lights are on ({int(self.lights_total_percent)}% light energy)") 
         
-    def parse_event_msg(self,msg):
+    def ui_parse_event_message(self,msg):
         if msg['payload']['event_type'] != 'DEVICE':
             self.statusBar().showMessage(f"Got {msg['payload']['severity']} event from {msg['payload']['event_type']}")
                 
@@ -215,7 +224,7 @@ class RQTHomeUI(qtw.QMainWindow):
         # lighting menu
         self.ui_action("lighting","view")
         self.ui_action("lighting","scenes")
-        self.ui_action("lighting","shedule")
+        self.ui_action("lighting","schedule")
         self.ui_action("lighting", "triggers")
         # temperature menu
         self.ui_action("temperature","view")
@@ -288,15 +297,16 @@ class RQTHomeUI(qtw.QMainWindow):
         frame_name_str = menu_name + "_" + item_name + "_frame"
         frame.setAccessibleName(frame_name_str)
         frame.setObjectName(frame_name_str)
-        frame.setFrameStyle(qtw.QFrame.Shape.Panel)
+        frame.setFrameStyle(self.frame_style)
         # layout
         vert_layout = qtw.QVBoxLayout(frame)
         vert_layout_name_str = menu_name + "_" + item_name + "_layout"
         vert_layout.setObjectName(vert_layout_name_str)
         vert_layout.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter | qtc.Qt.AlignmentFlag.AlignVCenter)
-        vert_layout.setSpacing(16)
+        vert_layout.setSpacing(8)
         if self.num_frames == 0:
             vert_layout.addWidget(self.big_clock)
+            vert_layout.addWidget(self.big_date)
         else:    
             title_label = qtw.QLabel(frame)
             font = title_label.font()
@@ -304,28 +314,28 @@ class RQTHomeUI(qtw.QMainWindow):
             title_label.setFont(font)
             title_label.setText(menu_name + " : " + item_name )
             title_label.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter | qtc.Qt.AlignmentFlag.AlignVCenter)
-            title_label.setFrameStyle(qtw.QFrame.Shape.Panel)
+            title_label.setFrameStyle(self.frame_style)
             vert_layout.addWidget(title_label)
         main_horiz_layout = qtw.QHBoxLayout()
         lh_panel = qtw.QFrame()
-        lh_panel.setMinimumSize(64,128)
-        lh_panel.setFrameStyle(qtw.QFrame.Shape.Panel)
+        #lh_panel.setMinimumSize(64,128)
+        lh_panel.setFrameStyle(self.frame_style)
         lh_panel.setObjectName(menu_name + "_" + item_name + "_lh_panel")
         layout = qtw.QVBoxLayout()
         label = qtw.QLabel("lh_panel")        
         layout.addWidget(label)
         lh_panel.setLayout(layout)   
         center_panel = qtw.QFrame()
-        center_panel.setMinimumSize(64,128)
-        center_panel.setFrameStyle(qtw.QFrame.Shape.Panel)
+        # center_panel.setMinimumSize(64,128)
+        center_panel.setFrameStyle(self.frame_style)
         center_panel.setObjectName(menu_name + "_" + item_name + "_center_panel")
         layout = qtw.QVBoxLayout()
         label = qtw.QLabel("center_panel")        
         layout.addWidget(label)
         center_panel.setLayout(layout)   
         rh_panel = qtw.QFrame()
-        rh_panel.setMinimumSize(64,128)
-        rh_panel.setFrameStyle(qtw.QFrame.Shape.Panel)
+        #rh_panel.setMinimumSize(64,128)
+        rh_panel.setFrameStyle(self.frame_style)
         rh_panel.setObjectName(menu_name + "_" + item_name + "_rh_panel")
         layout = qtw.QVBoxLayout()
         label = qtw.QLabel("rh_panel")        
@@ -336,9 +346,9 @@ class RQTHomeUI(qtw.QMainWindow):
         main_horiz_layout.addWidget(rh_panel)
         main_horiz_layout.setSpacing(128)
         footer_panel = qtw.QFrame()
-        footer_panel.setMinimumHeight(64)
-        footer_panel.setMaximumHeight(64)
-        footer_panel.setFrameStyle(qtw.QFrame.Shape.Panel)
+        # footer_panel.setMinimumHeight(64)
+        # footer_panel.setMaximumHeight(64)
+        footer_panel.setFrameStyle(self.frame_style)
         footer_panel.setObjectName(menu_name + "_" + item_name + "_footer_panel")
         layout = qtw.QHBoxLayout()
         label = qtw.QLabel("footer_panel")
@@ -366,22 +376,28 @@ class RQTHomeUI(qtw.QMainWindow):
         self.frame_dict[menu_name][item_name]['footer'] = footer_panel
         self.frame_dict[menu_name][item_name]['index'] = self.num_frames
         self.num_frames += 1
-        custom_method_name = "setup_frame_" + menu_name + "_" + item_name
+        custom_method_name = "setup_frame_" + menu_name.replace(' ','_') + "_" + item_name.replace(' ','_')
         if hasattr(self, custom_method_name):
             customize = getattr(self,custom_method_name)
             if callable(customize):
-                print(f"found customization method: {custom_method_name}")
+                # print(f"found customization method: {custom_method_name}")
                 customize(self.frame_dict[menu_name][item_name])
         
     def setup_frame_home_overview(self,f):
         frame = f['footer']
         layout = frame.layout()
         num_widgets = layout.count()
-        # use the last widget
+        # use the last/only widget for lighting summary
         if (num_widgets):
             self.lighting_summary_label = layout.itemAt(num_widgets-1).widget()
            
-                    
+    def setup_frame_home_restart_system(self,f):
+        f['title_label'].setText("Restart ROS Home System?")
+           
+    def setup_frame_lighting_view(self,f):
+        f['title_label'].setText("All Lights")
+
+                       
         
 ################################################
 #
