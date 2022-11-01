@@ -250,7 +250,7 @@ class RQTHomeUI(qtw.QMainWindow):
         self.devices_summary_label.setText(f"{len(msg['payload'])} network hosts found on {msg['payload'][0]['type']}: {num_known} known.")
 
     def ui_parse_nodes_msg(self,msg):
-        self.nodes_summary_label.setText()
+        self.nodes_summary_label.setText(f"ROS Home: ")
     
     def ui_action(self,parent_label, label):
         a = qtg.QAction(label,self)
