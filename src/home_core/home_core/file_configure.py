@@ -14,7 +14,7 @@ class HomeConfigurator(Node):
 
     def __init__(self):
         super().__init__('home_config')
-        self.folder = "/data/home_ws/config"
+        self.root_folder = "/data/home_ws/config"
         self.publisher_settings = self.create_publisher(String, 'settings', 10)
         self.timer_period = 0.5  # seconds
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
@@ -22,12 +22,12 @@ class HomeConfigurator(Node):
         self.files = {}
 
     def timer_callback(self):
-        ls = os.listdir(self.folder)
+        ls = os.listdir(self.root_folder)
         for f in ls:
             if f.endswith(".ini") or f.endswith(".INI"):
                 is_new = True
                 is_updated = False
-                fpath = self.folder + "/" +  f
+                fpath = self.root_folder + "/" +  f
                 for fname in self.files:
                     if fname == f:
                         is_new = False

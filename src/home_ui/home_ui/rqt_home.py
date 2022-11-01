@@ -35,12 +35,18 @@ class ROSHomeUI(Node):
         self.event_subscription = self.create_subscription(String,
             'events',
             self.event_listener_callback,10)
-
-                                                           
+        self.wx_conditions_subscription = self.create_subscription(String,
+            'wx_conditions',
+            self.conditions_listener_callback,10)
+        self.known_devices_subscription = self.create_subscription(String,
+            'known_net_devices',
+            self.devices_listener_callback,10)
+                                               
         self.spin_count = 0
         self.lighting_msg_count = 0
         self.event_msg_count = 0
-        self.wx_current_message_count = 0
+        self.conditions_msg_count = 0
+        self.devices_msg_count = 0
         
     def send_command(self):
         if len(self.commands):
@@ -78,6 +84,24 @@ class ROSHomeUI(Node):
             self.latest_event_msg = msg
             self.event_msg_count +=1 
 
+    def conditions_listener_callback(self,msg):
+        m = json.loads(msg.data)
+        observations = m['payload']
+        if (type(observations['temperature']['value']) == int) or \
+            (type(observations['temperature']['value']) == float):
+            self.get_logger().info('Current weather: "%s" %.1f F' % (observations['textDescription'],observations['temperature']['value']/5*9+32)) # degrees F
+        else:
+            self.get_logger().info(f"Current weather:  {observations['textDescription']} temp is {str(type(observations['temperature']['value']))}")            
+        self.latest_conditions_msg = m
+        self.conditions_msg_count +=1 
+
+    def devices_listener_callback(self,msg):
+        msg = json.loads(msg.data)
+        self.get_logger().info(f"{len(msg['payload'])} network hosts found on {msg['payload'][0]['type']}")
+        self.latest_devices_msg = msg
+        self.devices_msg_count +=1 
+
+            
 #######################################################################
 #
 #     The class ROSHomeUI is the main class in this app. It owns a ROS
@@ -134,12 +158,11 @@ class RQTHomeUI(qtw.QMainWindow):
         self.big_clock.setFont(font)
         self.big_clock.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter | qtc.Qt.AlignmentFlag.AlignVCenter)
         self.big_clock.setFrameStyle(self.frame_style)
-               
         self.big_date  = qtw.QLabel()
         self.big_date.setAccessibleName("big_date")
         self.big_date.setObjectName("big_date")      
         font = self.big_date.font()
-        font.setPointSize(32)
+        font.setPointSize(20)
         self.big_date.setFont(font)
         self.big_date.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter | qtc.Qt.AlignmentFlag.AlignVCenter)
         self.big_date.setFrameStyle(self.frame_style)       
@@ -161,6 +184,8 @@ class RQTHomeUI(qtw.QMainWindow):
         # do ros stuff, then check for ros results
         self.lighting_msg_count = self.ros_node.lighting_msg_count
         self.event_msg_count = self.ros_node.event_msg_count
+        self.conditions_msg_count = self.ros_node.conditions_msg_count        
+        self.devices_msg_count = self.ros_node.devices_msg_count
         rclpy.spin_once(self.ros_node,timeout_sec=0.100) 
         self.ros_node.spin_count += 1 
         self.check_for_ros_msgs()
@@ -177,9 +202,17 @@ class RQTHomeUI(qtw.QMainWindow):
     
     def check_for_ros_msgs(self):
         if self.lighting_msg_count < self.ros_node.lighting_msg_count:
+            self.lighting_msg_count = self.ros_node.lighting_msg_count
             self.ui_parse_lighting_msg(self.ros_node.latest_lighting_msg)
         if self.event_msg_count < self.ros_node.event_msg_count:
-            self.ui_parse_event_message(self.ros_node.latest_event_msg)
+            self.event_msg_count = self.ros_node.event_msg_count
+            self.ui_parse_event_msg(self.ros_node.latest_event_msg)
+        if self.conditions_msg_count < self.ros_node.conditions_msg_count:
+            self.conditions_msg_count = self.ros_node.conditions_msg_count
+            self.ui_parse_conditions_msg(self.ros_node.latest_conditions_msg)    
+        if self.devices_msg_count < self.ros_node.devices_msg_count:
+            self.devices_msg_count = self.ros_node.devices_msg_count
+            self.ui_parse_devices_msg(self.ros_node.latest_devices_msg)    
         
     def ui_parse_lighting_msg(self,msg):
         self.statusBar().showMessage(f"Got status for {len(msg['payload']['lights'])} {msg['payload']['type']} lights.")
@@ -197,10 +230,28 @@ class RQTHomeUI(qtw.QMainWindow):
         self.lighting_summary_label.setText(
             f"{msg['payload']['type']}: {self.num_lights_on} of {self.num_lights} lights are on ({int(self.lights_total_percent)}% light energy)") 
         
-    def ui_parse_event_message(self,msg):
+    def ui_parse_event_msg(self,msg):
         if msg['payload']['event_type'] != 'DEVICE':
-            self.statusBar().showMessage(f"Got {msg['payload']['severity']} event from {msg['payload']['event_type']}")
-                
+            self.statusBar().showMessage(f"Got {msg['payload']['event_type']} event message.")
+           
+    def ui_parse_conditions_msg(self,msg):
+        observations = msg['payload']
+        if (type(observations['temperature']['value']) == int) or \
+            (type(observations['temperature']['value']) == float):
+                self.summary_wx_temp_label.setText(f"{int(observations['temperature']['value']/5*9+32)}\u00b0F")
+        self.summary_wx_desc_label.setText(f"{observations['textDescription']}")
+
+    def ui_parse_devices_msg(self,msg):
+        num_known = 0
+        dev_list = msg['payload']
+        for dev in dev_list:
+            if dev['is_known']:
+                num_known += 1
+        self.devices_summary_label.setText(f"{len(msg['payload'])} network hosts found on {msg['payload'][0]['type']}: {num_known} known.")
+
+    def ui_parse_nodes_msg(self,msg):
+        self.nodes_summary_label.setText()
+    
     def ui_action(self,parent_label, label):
         a = qtg.QAction(label,self)
         a.triggered.connect(lambda : self.menu_callback(parent_label,label))
@@ -251,8 +302,8 @@ class RQTHomeUI(qtw.QMainWindow):
         self.ui_action("devices","all known")
         self.ui_action("devices","identify")     
         # diagnostics
-        self.ui_action("diagnostics","console")
-        self.ui_action("diagnostics","measures")
+        self.ui_action("diagnostics","measurements")        
+        self.ui_action("diagnostics","ros console")
         # help
         self.ui_action("help","getting started")
         self.ui_action("help","about")
@@ -323,6 +374,7 @@ class RQTHomeUI(qtw.QMainWindow):
         lh_panel.setObjectName(menu_name + "_" + item_name + "_lh_panel")
         layout = qtw.QVBoxLayout()
         label = qtw.QLabel("lh_panel")        
+        label.setFrameStyle(self.frame_style)
         layout.addWidget(label)
         lh_panel.setLayout(layout)   
         center_panel = qtw.QFrame()
@@ -331,6 +383,7 @@ class RQTHomeUI(qtw.QMainWindow):
         center_panel.setObjectName(menu_name + "_" + item_name + "_center_panel")
         layout = qtw.QVBoxLayout()
         label = qtw.QLabel("center_panel")        
+        label.setFrameStyle(self.frame_style)
         layout.addWidget(label)
         center_panel.setLayout(layout)   
         rh_panel = qtw.QFrame()
@@ -339,6 +392,7 @@ class RQTHomeUI(qtw.QMainWindow):
         rh_panel.setObjectName(menu_name + "_" + item_name + "_rh_panel")
         layout = qtw.QVBoxLayout()
         label = qtw.QLabel("rh_panel")        
+        label.setFrameStyle(self.frame_style)
         layout.addWidget(label)
         rh_panel.setLayout(layout)   
         main_horiz_layout.addWidget(lh_panel)
@@ -350,8 +404,9 @@ class RQTHomeUI(qtw.QMainWindow):
         # footer_panel.setMaximumHeight(64)
         footer_panel.setFrameStyle(self.frame_style)
         footer_panel.setObjectName(menu_name + "_" + item_name + "_footer_panel")
-        layout = qtw.QHBoxLayout()
+        layout = qtw.QVBoxLayout()
         label = qtw.QLabel("footer_panel")
+        label.setFrameStyle(self.frame_style)
         layout.addWidget(label)
         footer_panel.setLayout(layout)       
         # bring it on home
@@ -387,9 +442,42 @@ class RQTHomeUI(qtw.QMainWindow):
         frame = f['footer']
         layout = frame.layout()
         num_widgets = layout.count()
-        # use the last/only widget for lighting summary
+        # remove the last/only widget, then add summary messages
         if (num_widgets):
-            self.lighting_summary_label = layout.itemAt(num_widgets-1).widget()
+            layout.removeWidget(layout.itemAt(num_widgets-1).widget())
+        self.lighting_summary_label = qtw.QLabel()
+        self.lighting_summary_label.setFrameStyle(self.frame_style)
+        layout.addWidget(self.lighting_summary_label)
+        self.nodes_summary_label = qtw.QLabel()
+        self.nodes_summary_label.setFrameStyle(self.frame_style)
+        layout.addWidget(self.nodes_summary_label)
+        self.devices_summary_label = qtw.QLabel()
+        self.devices_summary_label.setFrameStyle(self.frame_style)
+        layout.addWidget(self.devices_summary_label)
+        frame = f['lh_panel']
+        layout = frame.layout()
+        num_widgets = layout.count()    
+         # use the last/only widget for lighting summary
+        if (num_widgets):
+            layout.removeWidget(layout.itemAt(num_widgets-1).widget())
+        self.summary_wx_temp_label = qtw.QLabel()
+        self.summary_wx_temp_label.setAccessibleName("wx_temp")
+        self.summary_wx_temp_label.setObjectName("wx_temp")      
+        font = self.summary_wx_temp_label.font()
+        font.setPointSize(64)
+        self.summary_wx_temp_label.setFont(font)
+        self.summary_wx_temp_label.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter | qtc.Qt.AlignmentFlag.AlignVCenter)
+        self.summary_wx_temp_label.setFrameStyle(self.frame_style)  
+        layout.addWidget(self.summary_wx_temp_label)
+        self.summary_wx_desc_label = qtw.QLabel()
+        self.summary_wx_desc_label.setAccessibleName("wx_desc")
+        self.summary_wx_desc_label.setObjectName("wx_desc")      
+        font = self.summary_wx_desc_label.font()
+        font.setPointSize(20)
+        self.summary_wx_desc_label.setFont(font)
+        self.summary_wx_desc_label.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter | qtc.Qt.AlignmentFlag.AlignVCenter)
+        self.summary_wx_desc_label.setFrameStyle(self.frame_style)  
+        layout.addWidget(self.summary_wx_desc_label)
            
     def setup_frame_home_restart_system(self,f):
         f['title_label'].setText("Restart ROS Home System?")

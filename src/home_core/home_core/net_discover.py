@@ -208,7 +208,7 @@ class NetworkDeviceDiscoverer(Node):
             device = self.identify_lg_device(device)
             device["is_known"] = True
 
-        elif device['vendor'] == 'Microsoft Corporation': # xboxen
+        elif device['vendor'] == 'Microsoft Corporation': # xboxen, etc.
             device = self.identify_microsoft_device(device)
             device["is_known"] = True
 
@@ -287,19 +287,17 @@ class NetworkDeviceDiscoverer(Node):
         return device
 
     def identify_technicolor_device(self, device):
-        device['type'] = 'Gateway Router'   
-        device['name'] = self.ssid   # FIXME 
+        device['type'] = 'WiFi Router'   
+        device['name'] = self.ssid   # FIXME - is this the best 'name'?
         device['model'] = 'Unknown'
         return device
 
     def identify_wyze_device(self, device):
         device['type']='Wyze Cam'    # FIXME - could be another device type            
         device['name'] = 'Unknown'   # FIXME - communicate with device to inspect device info
-        device['model'] = 'Unknown'
-        device['is_known'] = True  
+        device['model'] = 'Unknown'  
         return device
 
-    #
     def discover_home(self):
         self.prev_devices = self.devices 
         self.devices = self.discover_network_addresses()

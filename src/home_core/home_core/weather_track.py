@@ -79,7 +79,7 @@ class WeatherTracker(Node):
                 self.publisher_conditions.publish(msg)
                 if (type(observations['temperature']['value']) == int) or \
                     (type(observations['temperature']['value']) == float):
-                    self.get_logger().info('Current: "%s" %.1f F' % (observations['textDescription'],observations['temperature']['value']/5*9+32))
+                    self.get_logger().info('Current: "%s" %.1f F' % (observations['textDescription'],observations['temperature']['value']/5*9+32)) # degrees F
                 else:
                     self.get_logger().info('Current: "%s" (NULL temp)' % observations['textDescription'])
                 self.i += 1
