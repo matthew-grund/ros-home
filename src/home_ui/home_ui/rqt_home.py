@@ -123,6 +123,7 @@ class RQTHomeUI(qtw.QMainWindow):
             int(self.screen_size.width()*0.75),
             int(self.screen_size.height()*0.5)
             )
+        self.last_wx_temp_deg_f = 99 
         # todo: center the app on the screen
         style_sheet ='''
             QWidget { 
@@ -234,7 +235,7 @@ class RQTHomeUI(qtw.QMainWindow):
         
     def ui_parse_event_msg(self,msg):
         if msg['payload']['event_type'] != 'DEVICE':
-            self.statusBar().showMessage(f"Got {msg['payload']['event_type']} event message.")
+            self.statusBar().showMessage(f"Got {msg['payload']['severity']} event from {msg['payload']['event_type']}")
            
     def ui_parse_conditions_msg(self,msg):
         observations = msg['payload']
@@ -254,7 +255,7 @@ class RQTHomeUI(qtw.QMainWindow):
         for dev in dev_list:
             if dev['is_known']:
                 num_known += 1
-        self.devices_summary_label.setText(f"{ts}   {len(msg['payload'])} network hosts found on {msg['payload'][0]['type']}: {num_known} known.")
+        self.devices_summary_label.setText(f"{ts}   {len(msg['payload'])} network hosts found on {msg['payload'][0]['type']}: {num_known} known")
 
     def ui_parse_nodes_msg(self,msg):
         t = datetime.now()

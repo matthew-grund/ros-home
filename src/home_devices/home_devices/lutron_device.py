@@ -13,7 +13,6 @@ import asyncio
 from pylutron_caseta.smartbridge import Smartbridge
 
 
-
 class LutronDevice(Node):
     def __init__(self):
         super().__init__('lutron_device')
