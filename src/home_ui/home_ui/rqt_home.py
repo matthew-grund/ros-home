@@ -216,6 +216,8 @@ class RQTHomeUI(qtw.QMainWindow):
         
     def ui_parse_lighting_msg(self,msg):
         self.statusBar().showMessage(f"Got status for {len(msg['payload']['lights'])} {msg['payload']['type']} lights.")
+        t = datetime.now()
+        ts = t.strftime("[%H:%M:%S.%f")[:-3]+']'
         lights = msg['payload']['lights']
         self.num_lights_on = 0
         self.num_lights =  0
@@ -228,7 +230,7 @@ class RQTHomeUI(qtw.QMainWindow):
         if self.num_lights > 0:
             self.lights_total_percent /= self.num_lights 
         self.lighting_summary_label.setText(
-            f"{msg['payload']['type']}: {self.num_lights_on} of {self.num_lights} lights are on ({int(self.lights_total_percent)}% light energy)") 
+            f"{ts}   {msg['payload']['type']}: {self.num_lights_on} of {self.num_lights} lights are on ({int(self.lights_total_percent)}% light energy)") 
         
     def ui_parse_event_msg(self,msg):
         if msg['payload']['event_type'] != 'DEVICE':
@@ -238,19 +240,26 @@ class RQTHomeUI(qtw.QMainWindow):
         observations = msg['payload']
         if (type(observations['temperature']['value']) == int) or \
             (type(observations['temperature']['value']) == float):
-                self.summary_wx_temp_label.setText(f"{int(observations['temperature']['value']/5*9+32)}\u00b0F")
+            self.summary_wx_temp_label.setText(f"{int(observations['temperature']['value']/5*9+32)}\u00b0F")
+            self.last_wx_temp_deg_f = observations['temperature']['value']/5*9+32
+        else:
+            self.summary_wx_temp_label.setText(f"{int(self.last_wx_temp_deg_f)}\u00b0F*")                
         self.summary_wx_desc_label.setText(f"{observations['textDescription']}")
 
     def ui_parse_devices_msg(self,msg):
+        t = datetime.now()
+        ts = t.strftime("[%H:%M:%S.%f")[:-3]+']'
         num_known = 0
         dev_list = msg['payload']
         for dev in dev_list:
             if dev['is_known']:
                 num_known += 1
-        self.devices_summary_label.setText(f"{len(msg['payload'])} network hosts found on {msg['payload'][0]['type']}: {num_known} known.")
+        self.devices_summary_label.setText(f"{ts}   {len(msg['payload'])} network hosts found on {msg['payload'][0]['type']}: {num_known} known.")
 
     def ui_parse_nodes_msg(self,msg):
-        self.nodes_summary_label.setText(f"ROS Home: ")
+        t = datetime.now()
+        ts = t.strftime("[%H:%M:%S.%f")[:-3]+']'
+        self.nodes_summary_label.setText(f"{ts}   ROS Home: ")
     
     def ui_action(self,parent_label, label):
         a = qtg.QAction(label,self)
@@ -503,5 +512,3 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()        
-
-    
