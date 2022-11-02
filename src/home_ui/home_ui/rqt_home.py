@@ -41,12 +41,17 @@ class ROSHomeUI(Node):
         self.known_devices_subscription = self.create_subscription(String,
             'known_net_devices',
             self.devices_listener_callback,10)
+        
+        self.nodes_subscription = self.create_subscription(String,
+            'node_list',
+            self.nodes_listener_callback,10)
                                                
         self.spin_count = 0
         self.lighting_msg_count = 0
         self.event_msg_count = 0
         self.conditions_msg_count = 0
         self.devices_msg_count = 0
+        self.nodes_msg_count = 0
         
     def send_command(self):
         if len(self.commands):
@@ -101,7 +106,13 @@ class ROSHomeUI(Node):
         self.latest_devices_msg = msg
         self.devices_msg_count +=1 
 
-            
+    def nodes_listener_callback(self,msg):
+        msg = json.loads(msg.data)
+        self.get_logger().info(f"ROS Home: {len(msg['payload'])} nodes currently running")
+        self.latest_nodes_msg = msg
+        self.nodes_msg_count +=1 
+
+              
 #######################################################################
 #
 #     The class ROSHomeUI is the main class in this app. It owns a ROS
@@ -167,6 +178,8 @@ class RQTHomeUI(qtw.QMainWindow):
         self.big_date.setFont(font)
         self.big_date.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter | qtc.Qt.AlignmentFlag.AlignVCenter)
         self.big_date.setFrameStyle(self.frame_style)       
+        
+        self.max_nodes_running = 0
                
         self.setup_actions()
         self.setup_top_menu()
@@ -189,7 +202,8 @@ class RQTHomeUI(qtw.QMainWindow):
         self.event_msg_count = self.ros_node.event_msg_count
         self.conditions_msg_count = self.ros_node.conditions_msg_count        
         self.devices_msg_count = self.ros_node.devices_msg_count
-        rclpy.spin_once(self.ros_node,timeout_sec=0.100) 
+        self.nodes_msg_count = self.ros_node.nodes_msg_count
+        rclpy.spin_once(self.ros_node,timeout_sec=0.075) 
         self.ros_node.spin_count += 1 
         self.check_for_ros_msgs()
         self.ros_spin_timer.singleShot(50,self.ros_timer_callback)
@@ -216,6 +230,9 @@ class RQTHomeUI(qtw.QMainWindow):
         if self.devices_msg_count < self.ros_node.devices_msg_count:
             self.devices_msg_count = self.ros_node.devices_msg_count
             self.ui_parse_devices_msg(self.ros_node.latest_devices_msg)    
+        if self.nodes_msg_count < self.ros_node.nodes_msg_count:
+            self.nodes_msg_count = self.ros_node.nodes_msg_count
+            self.ui_parse_nodes_msg(self.ros_node.latest_nodes_msg)    
         
     def ui_parse_lighting_msg(self,msg):
         self.statusBar().showMessage(f"Got status for {len(msg['payload']['lights'])} {msg['payload']['type']} lights.")
@@ -262,7 +279,10 @@ class RQTHomeUI(qtw.QMainWindow):
     def ui_parse_nodes_msg(self,msg):
         t = datetime.now()
         ts = t.strftime("[%H:%M:%S.%f")[:-3]+']'
-        self.nodes_summary_label.setText(f"{ts}   ROS Home: ")
+        num_nodes = len(msg['payload'])
+        if self.max_nodes_running < num_nodes:
+            self.max_nodes_running = num_nodes
+        self.nodes_summary_label.setText(f"{ts}   ROS Home: {num_nodes} ROS nodes currently running. (max is {self.max_nodes_running} nodes running).")
     
     def ui_action(self,parent_label, label):
         a = qtg.QAction(label,self)
