@@ -171,7 +171,9 @@ class RQTHomeUI(qtw.QMainWindow):
         self.setup_actions()
         self.setup_top_menu()
         self.setup_center_widget()
+        self.setup_keyboard_shortcuts()
         
+        # splash the version, to start
         self.statusBar().showMessage(self.title + "      ver:" + self.version_str + "       " + self.copyright_str)
         
         self.ros_node = ROSHomeUI()
@@ -495,8 +497,53 @@ class RQTHomeUI(qtw.QMainWindow):
     def setup_frame_lighting_view(self,f):
         f['title_label'].setText("All Lights")
 
-                       
+    def setup_keyboard_shortcuts(self):
+        self.shorty_quit_c = qtg.QShortcut(qtg.QKeySequence('Ctrl+C'), self)
+        self.shorty_quit_c.activated.connect(self.app.quit)
+
+        self.shorty_quit_q = qtg.QShortcut(qtg.QKeySequence('Ctrl+Q'), self)
+        self.shorty_quit_q.activated.connect(self.app.quit)
         
+        self.shorty_next_page = qtg.QShortcut(qtg.QKeySequence('Tab'), self)
+        self.shorty_next_page.activated.connect(self.next_page)
+
+        self.shorty_prev_page = qtg.QShortcut(qtg.QKeySequence('Shift+Tab'), self)
+        self.shorty_prev_page.activated.connect(self.prev_page)
+       
+        self.shorty_home = qtg.QShortcut(qtg.QKeySequence('Home'), self)
+        self.shorty_home.activated.connect(self.home_page)
+
+        self.shorty_full = qtg.QShortcut(qtg.QKeySequence('Esc'), self)
+        self.shorty_full.activated.connect(self.max_min)
+       
+    def next_page(self):
+        count = self.stack.count()
+        current = self.stack.currentIndex()   
+        current += 1
+        if current >= count:
+            current = 0
+        self.stack.setCurrentIndex(current)   
+                
+    def prev_page(self):
+        count = self.stack.count()
+        current = self.stack.currentIndex()   
+        current -= 1
+        if current < 0:
+            current = count-1
+        self.stack.setCurrentIndex(current)      
+        
+    def home_page(self):
+        self.stack.setCurrentIndex(0)   
+        
+    def max_min(self):          
+        if self.isFullScreen():
+            # self.setWindowFlags(self._flags)
+            self.showNormal()
+        else:
+            self._flags = self.windowFlags()
+            # self.setWindowFlags(qtc.Qt.WindowCloseButtonHint | Qt.WindowType_Mask)
+            self.showFullScreen() 
+            
 ################################################
 #
 #  Start the QT app, which starts the ROS node
