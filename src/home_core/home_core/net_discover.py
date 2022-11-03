@@ -220,6 +220,10 @@ class NetworkDeviceDiscoverer(Node):
             device = self.identify_technicolor_device(device)
             device['is_known'] = True
 
+        elif device['vendor'] == 'Texas Instruments':
+            device = self.identify_ti_device(device)
+            device['is_known'] = True
+
         elif device['vendor'] == 'Wyze Labs Inc':
             device = self.identify_wyze_device(device)
             device['is_known'] = True
@@ -234,17 +238,16 @@ class NetworkDeviceDiscoverer(Node):
         return device
     
     def identify_arcadyan_device(self, device):    
-        device['type'] = 'Yamaha Receiver' # FIXME - could be another device type
-        device['has_bluetooth'] = True
         yamaha = self.fetch_yamaha_config(device['ip'])
         if len(yamaha) > 0:
-            device['vendor'] = yamaha['manufacturer']    # overwrite Arcadyan
+            device['vendor'] = yamaha['manufacturer']   
             device['type'] = yamaha['modelDescription']
             device['name'] = yamaha['friendlyName'] 
             device['model'] = yamaha['modelName']
             device['serial_number'] = yamaha['serialNumber']
+            device['has_bluetooth'] = True
         else:  
-            device['type'] = 'Unknown'
+            device['type'] = 'Arcadyan' 
             device['name'] = 'Unknown' 
             device['model'] = 'Unknown'
 
@@ -291,7 +294,22 @@ class NetworkDeviceDiscoverer(Node):
         device['name'] = self.ssid   # FIXME - is this the best 'name'?
         device['model'] = 'Unknown'
         return device
-
+    
+    def identify_ti_device(self, device):
+        yamaha = self.fetch_yamaha_config(device['ip'])
+        if len(yamaha) > 0:
+            device['vendor'] = yamaha['manufacturer']   
+            device['type'] = yamaha['modelDescription']
+            device['name'] = yamaha['friendlyName'] 
+            device['model'] = yamaha['modelName']
+            device['serial_number'] = yamaha['serialNumber']
+            device['has_bluetooth'] = True
+        else:  
+            device['type'] = 'Texas Instruments'
+            device['name'] = 'Unknown' 
+            device['model'] = 'Unknown'
+        return device
+    
     def identify_wyze_device(self, device):
         device['type']='Wyze Cam'    # FIXME - could be another device type            
         device['name'] = 'Unknown'   # FIXME - communicate with device to inspect device info
