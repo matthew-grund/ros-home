@@ -32,6 +32,9 @@ class ROSHomeUI(Node):
         self.lighting_subscription = self.create_subscription(String,
             '/lighting/status',
             self.lighting_status_callback,10)    
+        self.lighting_subscription = self.create_subscription(String,
+            '/lighting/scenes',
+            self.lighting_scenes_callback,10)    
         self.event_subscription = self.create_subscription(String,
             '/diagnostics/events',
             self.event_listener_callback,10)
@@ -51,6 +54,7 @@ class ROSHomeUI(Node):
         self.conditions_msg_count = 0
         self.devices_msg_count = 0
         self.nodes_msg_count = 0
+        self.scene_msg_count = 0
         
     def send_command(self):
         if len(self.commands):
@@ -80,6 +84,12 @@ class ROSHomeUI(Node):
         self.get_logger().info(f"Got status for {len(msg['payload']['lights'])} {msg['payload']['type']} lights." )
         self.latest_lighting_msg = msg
         self.lighting_msg_count +=1 
+
+    def lighting_scenes_callback(self,msg):
+        msg = json.loads(msg.data)
+        self.get_logger().info(f"Got lighting scene update for {len(msg['payload']['today'])}: {msg['payload']['previous_scene']}" )
+        self.latest_scene_msg = msg
+        self.scene_msg_count +=1 
 
     def event_listener_callback(self,msg):
         msg = json.loads(msg.data)
@@ -161,7 +171,7 @@ class RQTHomeUI(qtw.QMainWindow):
             }
         '''
         self.app.setStyleSheet(style_sheet)
-        self.frame_style = qtw.QFrame.Shape.Panel  # Panel for debugging, NoFrame for  aclean look
+        self.frame_style = qtw.QFrame.Shape.Panel  # Panel for debugging, NoFrame for a clean look
        
         self.big_clock  = qtw.QLabel()
         self.big_clock.setAccessibleName("big_clock")
@@ -204,6 +214,7 @@ class RQTHomeUI(qtw.QMainWindow):
         self.conditions_msg_count = self.ros_node.conditions_msg_count        
         self.devices_msg_count = self.ros_node.devices_msg_count
         self.nodes_msg_count = self.ros_node.nodes_msg_count
+        self.scene_msg_count = self.ros_node.scene_msg_count
         rclpy.spin_once(self.ros_node,timeout_sec=0.075) 
         self.ros_node.spin_count += 1 
         self.check_for_ros_msgs()
@@ -212,7 +223,7 @@ class RQTHomeUI(qtw.QMainWindow):
     def ui_clock_timer_callback(self):
         now = datetime.now()
         self.clock_str = now.strftime("%H:%M:%S")
-        self.date_str = now.strftime("%A %B %-d")
+        self.date_str = now.strftime("%A, %B %-d, %Y")
         self.big_clock.setText(self.clock_str)
         self.big_date.setText(self.date_str)
         self.menu_clock.setText(self.clock_str)
@@ -234,7 +245,10 @@ class RQTHomeUI(qtw.QMainWindow):
         if self.nodes_msg_count < self.ros_node.nodes_msg_count:
             self.nodes_msg_count = self.ros_node.nodes_msg_count
             self.ui_parse_nodes_msg(self.ros_node.latest_nodes_msg)    
-        
+        if self.scene_msg_count < self.ros_node.scene_msg_count:
+            self.scene_msg_count = self.ros_node.scene_msg_count
+            self.ui_parse_scene_msg(self.ros_node.latest_scene_msg) 
+                    
     def ui_parse_lighting_msg(self,msg):
         self.statusBar().showMessage(f"Got status for {len(msg['payload']['lights'])} {msg['payload']['type']} lights.")
         t = datetime.now()
@@ -256,6 +270,13 @@ class RQTHomeUI(qtw.QMainWindow):
     def ui_parse_event_msg(self,msg):
         if msg['payload']['event_type'] != 'DEVICE':
             self.statusBar().showMessage(f"Got {msg['payload']['severity']} event from {msg['payload']['event_type']}")
+ 
+    def ui_parse_scene_msg(self,msg):
+        self.statusBar().showMessage(f"Got lighting scene update for {msg['payload']['today']}: {msg['payload']['previous_scene']}")
+        self.current_scene_label.setText(f"{msg['payload']['previous_scene'].replace('_',' ')}")
+        self.next_scene_label.setText(f"{msg['payload']['next_scene'].replace('_',' ')}")  
+        hrs_remain  = int( 10.0 *msg['payload']['secs_remaining']/3600)/10.0            
+        self.next_scene_time_label.setText(f"{hrs_remain} hrs")           
            
     def ui_parse_conditions_msg(self,msg):
         observations = msg['payload']
@@ -393,14 +414,10 @@ class RQTHomeUI(qtw.QMainWindow):
         if self.num_frames == 0:
             vert_layout.addWidget(self.big_clock)
             vert_layout.addWidget(self.big_date)
+            vert_layout.addWidget(self.styled_label(18))
         else:    
-            title_label = qtw.QLabel(frame)
-            font = title_label.font()
-            font.setPointSize(18)
-            title_label.setFont(font)
+            title_label = self.styled_label(18)
             title_label.setText(menu_name + " : " + item_name )
-            title_label.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter | qtc.Qt.AlignmentFlag.AlignVCenter)
-            title_label.setFrameStyle(self.frame_style)
             vert_layout.addWidget(title_label)
         main_horiz_layout = qtw.QHBoxLayout()
         lh_panel = qtw.QFrame()
@@ -491,30 +508,53 @@ class RQTHomeUI(qtw.QMainWindow):
         self.devices_summary_label = qtw.QLabel()
         self.devices_summary_label.setFrameStyle(self.frame_style)
         layout.addWidget(self.devices_summary_label)
+        
         frame = f['lh_panel']
         layout = frame.layout()
         num_widgets = layout.count()    
          # use the last/only widget for lighting summary
         if (num_widgets):
             layout.removeWidget(layout.itemAt(num_widgets-1).widget())
-        self.summary_wx_temp_label = qtw.QLabel()
+        self.summary_wx_temp_label = self.styled_label(64)
         self.summary_wx_temp_label.setAccessibleName("wx_temp")
-        self.summary_wx_temp_label.setObjectName("wx_temp")      
-        font = self.summary_wx_temp_label.font()
-        font.setPointSize(64)
-        self.summary_wx_temp_label.setFont(font)
-        self.summary_wx_temp_label.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter | qtc.Qt.AlignmentFlag.AlignVCenter)
-        self.summary_wx_temp_label.setFrameStyle(self.frame_style)  
+        self.summary_wx_temp_label.setObjectName("wx_temp")
+        self.summary_wx_temp_label.setText("Temp")      
         layout.addWidget(self.summary_wx_temp_label)
-        self.summary_wx_desc_label = qtw.QLabel()
+        self.summary_wx_desc_label = self.styled_label(32)
         self.summary_wx_desc_label.setAccessibleName("wx_desc")
-        self.summary_wx_desc_label.setObjectName("wx_desc")      
-        font = self.summary_wx_desc_label.font()
-        font.setPointSize(20)
-        self.summary_wx_desc_label.setFont(font)
-        self.summary_wx_desc_label.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter | qtc.Qt.AlignmentFlag.AlignVCenter)
-        self.summary_wx_desc_label.setFrameStyle(self.frame_style)  
+        self.summary_wx_desc_label.setObjectName("wx_desc")
+        self.summary_wx_desc_label.setText("Desc")         
         layout.addWidget(self.summary_wx_desc_label)
+        
+        frame = f['center_panel']
+        layout = frame.layout()
+        num_widgets = layout.count()
+        if (num_widgets):
+            layout.removeWidget(layout.itemAt(num_widgets-1).widget())
+        scene_label = self.styled_label(24)
+        scene_label.setText("Current Scene") 
+        layout.addWidget(scene_label)
+        self.current_scene_label = self.styled_label(48) 
+        self.current_scene_label.setText("<current>") 
+        layout.addWidget(self.current_scene_label)  
+        next_label = self.styled_label(24)    
+        next_label.setText("Next Scene") 
+        layout.addWidget(next_label)
+        self.next_scene_label = self.styled_label(32)
+        self.next_scene_label.setText("<next>") 
+        layout.addWidget(self.next_scene_label) 
+        self.next_scene_time_label = self.styled_label(24)  
+        self.next_scene_time_label.setText("<time>")  
+        layout.addWidget(self.next_scene_time_label)
+    
+    def styled_label(self,fontsize): 
+        styled_label = qtw.QLabel()
+        font = styled_label.font()
+        font.setPointSize(fontsize)
+        styled_label.setFont(font)    
+        styled_label.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter | qtc.Qt.AlignmentFlag.AlignVCenter)
+        styled_label.setFrameStyle(self.frame_style)  
+        return styled_label   
            
     def setup_frame_home_restart_system(self,f):
         f['title_label'].setText("Restart ROS Home System?")
