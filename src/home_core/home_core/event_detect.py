@@ -220,8 +220,8 @@ class EventDetector(Node):
         lost_nodes=[]
         for known in self.known_nodes:
             if known not in node_list:
-                self.get_logger().error(f"ROS HOME node crashed: %s" % str(known))
-                self.publish_event('NODE','ERROR',f"ROS HOME node %s crashed!" % str(known), self.known_nodes[known])
+                self.get_logger().error(f"ROS HOME node 'stopped running': %s" % str(known))
+                self.publish_event('NODE','ERROR',f"ROS HOME node %s 'stopped running'!" % str(known), self.known_nodes[known])
                 # TODO: restart the node, or do something else sensible
                 lost_nodes.append(known)
         for lost in lost_nodes:
