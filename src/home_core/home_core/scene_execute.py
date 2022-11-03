@@ -14,7 +14,7 @@ class SceneExecutive(Node):
         super().__init__('scene_executive')
         self.settings_subscription = self.create_subscription(
             String,
-            'settings',
+            '/home/configuration',
             self.settings_callback,
             10)
         self.settings_subscription  # prevent unused variable warning

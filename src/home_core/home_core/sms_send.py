@@ -16,13 +16,13 @@ class SMSMessager(Node):
         super().__init__('sms_messager')
         self.event_subscription = self.create_subscription(
             String,
-            'events',
+            '/diagnostics/events',
             self.event_listener_callback,
             10)
         self.event_subscription  # prevent unused variable warning
         self.config_subscription = self.create_subscription(
             String,
-            'settings',
+            '/home/configuration',
             self.config_listener_callback,
             10)
         self.config_subscription  # prevent unused variable warning

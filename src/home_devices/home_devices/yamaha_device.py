@@ -16,7 +16,7 @@ class YamahaDevice(Node):
 
     def __init__(self):
         super().__init__('yamaha_device')
-        self.publisher_status = self.create_publisher(String, 'media_status', 10)
+        self.publisher_status = self.create_publisher(String, '/media/status', 10)
         self.poll_timer_period = 1  # seconds
         self.poll_timer = self.create_timer(self.poll_timer_period, self.poll_timer_callback)
         self.i = 0
@@ -24,19 +24,19 @@ class YamahaDevice(Node):
         self.yamaha_devices = {}  #  dict with IP keys
 
         self.config_sub = self.create_subscription(
-            String, 'settings',
+            String, '/home/configuration',
             self.config_callback,10)
 
         self.command_sub = self.create_subscription(
-            String,'media_commands',
+            String,'/media/commands',
             self.command_callback,10)
 
         self.command_sub = self.create_subscription(
-            String,'events',
+            String,'/diagnostics/events',
             self.event_callback,10)
 
         self.devices_sub = self.create_subscription(
-            String,'known_net_devices',
+            String,'/devices/known/network',
             self.devices_callback,10)
 
     

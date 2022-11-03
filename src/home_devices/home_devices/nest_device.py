@@ -19,7 +19,7 @@ class HomeScheduler(Node):
         self.i = 0
         self.config_subscription = self.create_subscription(
             String,
-            'settings',
+            '/home/configuration',
             self.config_listener_callback,
             10)
         self.config_subscription

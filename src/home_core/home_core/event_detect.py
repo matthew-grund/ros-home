@@ -22,69 +22,69 @@ class EventDetector(Node):
         self.known_nodes={}
         self.subscription_devices = self.create_subscription(
             String,
-            'net_devices',
+            '/devices/discovered/network',
             self.devices_callback,
             10)
         self.subscription_devices  # prevent unused variable warning
 
         self.subscription_owntracks = self.create_subscription(
             String,
-            'owntracks',
+            '/people/tracking/owntracks',
             self.owntracks_callback,
             10)
         self.subscription_owntracks  # prevent unused variable warning
 
         self.subscription_scene = self.create_subscription(
             String,
-            'scenes',
+            '/lighting/scenes',
             self.scene_callback,
             10)
         self.subscription_scene  # prevent unused variable warning
 
         self.subscription_sun = self.create_subscription(
             String,
-            'sun',
+            '/environment/sun',
             self.sun_callback,
             10)
         self.subscription_sun  # prevent unused variable warning
 
         self.subscription_forecast = self.create_subscription(
             String,
-            'wx_forecast',
+            '/environment/weather/forecast',
             self.forecast_callback,
             10)
         self.subscription_forecast  # prevent unused variable warning
 
         self.subscription_conditions = self.create_subscription(
             String,
-            'wx_conditions',
+            '/environment/weather/conditions',
             self.conditions_callback,
             10)
         self.subscription_conditions  # prevent unused variable warning
 
         self.subscription_wx_alerts = self.create_subscription(
             String,
-            'wx_alerts',
+            '/environment/weather/alerts',
             self.wx_alerts_callback,
             10)
         self.subscription_wx_alerts # prevent unused variable warning
 
         self.subscription_node_list = self.create_subscription(
             String,
-            'node_list',
+            '/nodes/list',
             self.node_list_callback,
             10)
         self.subscription_node_list # prevent unused variable warning
 
         self.subscription_lighting_status = self.create_subscription(
             String,
-            'lighting_status',
+            '/lighting/status',
             self.lighting_status_callback,
             10)
         self.subscription_lighting_status # prevent unused variable warning
 
 
-        self.publisher_events = self.create_publisher(String, 'events', 10)
+        self.publisher_events = self.create_publisher(String, '/diagnostics/events', 10)
         self.period_name = ""
         self.timer_period = 10.0  # seconds
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
@@ -92,7 +92,7 @@ class EventDetector(Node):
         self.dev_index = 0
         self.event_index = 0
         
-        self.publisher_devices = self.create_publisher(String, 'known_net_devices', 10)
+        self.publisher_devices = self.create_publisher(String, '/devices/known/network', 10)
         self.wx_latest_conditions = ""
         self.wx_recent_forecasts = {}
         self.lights = []
@@ -153,12 +153,12 @@ class EventDetector(Node):
         max_sec = m['interval']
         sun = m['payload']
         #if m['index'] == 0:
-        #    self.publish_event('SUN','ERROR','Sun tracker node restarted',sun)
+        #    self.publish_event('/environment/sun','ERROR','Sun tracker node restarted',sun)
         rem_hours = sun['secs_remaining'] / 3600.0
         event = sun['next_event']    
         self.get_logger().info('Sun: %.1f hours until %s' % (rem_hours,event))
         if sun['secs_remaining'] <= max_sec:
-            self.publish_event('SUN','INFO','%s'% event,sun)
+            self.publish_event('/environment/sun','INFO','%s'% event,sun)
             
     def scene_callback(self, msg):
         m = json.loads(msg.data)

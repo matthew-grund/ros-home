@@ -22,7 +22,7 @@ class NetworkDeviceDiscoverer(Node):
 
     def __init__(self):
         super().__init__('network_discover')
-        self.publisher_devices = self.create_publisher(String, 'net_devices', 10)
+        self.publisher_devices = self.create_publisher(String, '/devices/discovered/network', 10)
         self.timer_period = 17.0  # seconds
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
         self.JSON_HEADERS = {'Content-type': 'application/json', 'Accept': 'text/plain'}

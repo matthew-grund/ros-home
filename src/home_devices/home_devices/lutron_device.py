@@ -16,7 +16,7 @@ from pylutron_caseta.smartbridge import Smartbridge
 class LutronDevice(Node):
     def __init__(self):
         super().__init__('lutron_device')
-        self.publisher_status = self.create_publisher(String, 'lighting_status', 10)
+        self.publisher_status = self.create_publisher(String, '/lighting/status', 10)
         self.poll_timer_period = 6  # seconds
         self.poll_timer = self.create_timer(self.poll_timer_period, self.poll_timer_callback)
         self.i = 0
@@ -34,7 +34,7 @@ class LutronDevice(Node):
         # subscribe to config
         self.config_sub = self.create_subscription(
             String,
-            'settings',
+            '/home/configuration',
             self.config_callback,
             10)
         self.config_sub  # prevent unused variable warning
@@ -42,7 +42,7 @@ class LutronDevice(Node):
         # subscribe to commands
         self.command_sub = self.create_subscription(
             String,
-            'lighting_commands',
+            '/lighting/commands',
             self.command_callback,
             10)
         self.command_sub  # prevent unused variable warning

@@ -19,18 +19,18 @@ class HomeScheduler(Node):
     # so often.
     def __init__(self):
         super().__init__('home_scheduler')
-        self.publisher_ = self.create_publisher(String, 'scenes', 10)
+        self.publisher_ = self.create_publisher(String, '/lighting/scenes', 10)
         self.timer_period = 3.0  # seconds
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
         self.config_subscription = self.create_subscription(
             String,
-            'settings',
+            '/home/configuration',
             self.config_listener_callback,
             10)
         self.config_subscription
         self.sun_subscription = self.create_subscription(
             String,
-            'sun',
+            '/environment/sun',
             self.sun_listener_callback,
             10)
         self.config_subscription
@@ -54,10 +54,10 @@ class HomeScheduler(Node):
         m['payload']['previous_scene'] = self.prev_scene
         m['payload']['secs_remaining'] = self.secs_remaining
         m['payload']['secs_elapsed'] = self.secs_elapsed
-        m['payload']['scenes'] = self.today_schedule
+        m['payload']['/lighting/scenes'] = self.today_schedule
         msg.data = json.dumps(m)
         self.publisher_.publish(msg)
-        self.get_logger().info('Publishing schedule with %d scenes' % len(m['payload']['scenes']))
+        self.get_logger().info('Publishing schedule with %d scenes' % len(m['payload']['/lighting/scenes']))
         self.i += 1
         self.need_config_location = True
 
@@ -189,8 +189,8 @@ class HomeScheduler(Node):
 
     def sun_listener_callback(self,msg):
         msg = json.loads(msg.data)
-        self.get_logger().info(f"Got sun events: %s" % json.dumps(msg['payload']['events']))
-        self.named_events = msg['payload']['events']
+        self.get_logger().info(f"Got sun events: %s" % json.dumps(msg['payload']['/diagnostics/events']))
+        self.named_events = msg['payload']['/diagnostics/events']
         if len(self.raw_schedule): 
             self.process_raw_schedule(self.raw_schedule) # reprocess schedule with latest sun events
         self.need_named_events = False        

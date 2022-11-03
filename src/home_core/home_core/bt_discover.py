@@ -19,7 +19,7 @@ class BluetoothDeviceDiscoverer(Node):
 
     def __init__(self):
         super().__init__('bluetooth_discover')
-        self.publisher_devices = self.create_publisher(String, 'bt_devices', 10)
+        self.publisher_devices = self.create_publisher(String, '/devices/bluetooth_devices', 10)
         self.scan_period = 33.0  # seconds
         self.host_timer = self.create_timer(self.scan_period, self.host_scan_callback)
         self.scan_index = 0
@@ -28,7 +28,7 @@ class BluetoothDeviceDiscoverer(Node):
         # subscribe to settings
         self.settings_sub = self.create_subscription(
             String,
-            'settings',
+            '/home/configuration',
             self.settings_callback,
             10)
         self.settings_sub  # prevent unused variable warning

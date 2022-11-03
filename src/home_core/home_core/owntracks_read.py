@@ -16,7 +16,7 @@ class OwnTracksMQTTReader(Node):
     
     def __init__(self):
         super().__init__('owntracks_read')
-        self.publisher_tracks = self.create_publisher(String, 'owntracks', 10)
+        self.publisher_tracks = self.create_publisher(String, '/people/tracking/owntracks', 10)
         #self.msg_period = 10.0  # seconds
         #self.host_timer = self.create_timer(self.msg_period, self.mqtt_poll_callback)
         self.msg_index  = 0
@@ -24,7 +24,7 @@ class OwnTracksMQTTReader(Node):
         # subscribe to settings
         self.settings_sub = self.create_subscription(
             String,
-            'settings',
+            '/home/configuration',
             self.settings_callback,
             10)
         self.settings_sub  # prevent unused variable warning

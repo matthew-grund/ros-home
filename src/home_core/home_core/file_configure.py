@@ -15,7 +15,7 @@ class HomeConfigurator(Node):
     def __init__(self):
         super().__init__('home_config')
         self.root_folder = "/data/home_ws/config"
-        self.publisher_settings = self.create_publisher(String, 'settings', 10)
+        self.publisher_settings = self.create_publisher(String, '/home/configuration', 10)
         self.timer_period = 0.5  # seconds
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
         self.i = 0

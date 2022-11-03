@@ -15,14 +15,14 @@ class WeatherTracker(Node):
     #
     def __init__(self):
         super().__init__('weather_tracker')
-        self.publisher_wx = self.create_publisher(String, 'wx_forecast', 10)
-        self.publisher_conditions = self.create_publisher(String, 'wx_conditions', 10)   
-        self.publisher_alerts = self.create_publisher(String, 'wx_alerts', 10)      
+        self.publisher_wx = self.create_publisher(String, '/environment/weather/forecast', 10)
+        self.publisher_conditions = self.create_publisher(String, '/environment/weather/conditions', 10)   
+        self.publisher_alerts = self.create_publisher(String, '/environment/weather/alerts', 10)      
         self.timer_period = 30.0  # seconds
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
         self.config_subscription = self.create_subscription(
             String,
-            'settings',
+            '/home/configuration',
             self.config_listener_callback,
             10)
         self.config_subscription

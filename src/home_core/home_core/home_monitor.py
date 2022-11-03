@@ -20,8 +20,8 @@ class HomeObserver(Node):
         self.wx_wind_dir_from_degrees = []
         self.wx_humidity_percent = []
                 
-        self.publisher_nodes = self.create_publisher(Int32, 'num_nodes', 10)
-        self.publisher_node_list = self.create_publisher(String,'node_list',10)
+        self.publisher_nodes = self.create_publisher(Int32, '/nodes/num_running', 10)
+        self.publisher_node_list = self.create_publisher(String,'/nodes/list',10)
         self.node_list_iter = 0
         self.ps_timer_period = 10  # seconds
         self.ps_timer = self.create_timer(self.ps_timer_period, self.ps_timer_callback)
@@ -31,7 +31,7 @@ class HomeObserver(Node):
         # subscribe to curent conditions
         self.wx_cond_sub = self.create_subscription(
             String,
-            'wx_conditions',
+            '/environment/weather/conditions',
             self.wx_cond_callback,
             10)
         self.wx_cond_sub  # prevent unused variable warning

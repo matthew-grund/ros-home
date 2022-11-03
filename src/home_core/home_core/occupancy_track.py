@@ -24,7 +24,7 @@ class OccupancyTracker(Node):
 
         self.config_subscription = self.create_subscription(
             String,
-            'settings',
+            '/home/configuration',
             self.config_listener_callback,
             10)
         self.config_subscription
@@ -33,7 +33,7 @@ class OccupancyTracker(Node):
 
         self.owntracks_subscription = self.create_subscription(
             String,
-            'owntracks',
+            '/people/tracking/owntracks',
             self.owntracks_listener_callback,
             10)
         self.config_subscription

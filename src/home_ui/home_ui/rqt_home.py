@@ -27,23 +27,23 @@ class ROSHomeUI(Node):
         super().__init__('rqt_home')
         self.publisher_cmds = self.create_publisher(String, 'commands', 10)
         self.config_subscription = self.create_subscription(String,
-            'settings',
+            '/home/configuration',
             self.config_listener_callback,10)
         self.lighting_subscription = self.create_subscription(String,
-            'lighting_status',
+            '/lighting/status',
             self.lighting_status_callback,10)    
         self.event_subscription = self.create_subscription(String,
-            'events',
+            '/diagnostics/events',
             self.event_listener_callback,10)
         self.wx_conditions_subscription = self.create_subscription(String,
-            'wx_conditions',
+            '/environment/weather/conditions',
             self.conditions_listener_callback,10)
         self.known_devices_subscription = self.create_subscription(String,
-            'known_net_devices',
+            '/devices/known/network',
             self.devices_listener_callback,10)
         
         self.nodes_subscription = self.create_subscription(String,
-            'node_list',
+            '/nodes/list',
             self.nodes_listener_callback,10)
                                                
         self.spin_count = 0
@@ -134,7 +134,9 @@ class RQTHomeUI(qtw.QMainWindow):
             int(self.screen_size.width()*0.75),
             int(self.screen_size.height()*0.5)
             )
+        
         self.last_wx_temp_deg_f = 99 
+        self.view_list = []
         # todo: center the app on the screen
         style_sheet ='''
             QWidget { 
@@ -272,6 +274,7 @@ class RQTHomeUI(qtw.QMainWindow):
         num_known = 0
         dev_list = msg['payload']
         for dev in dev_list:
+            
             if dev['is_known']:
                 num_known += 1
         self.devices_summary_label.setText(f"{ts}   {len(msg['payload'])} network hosts found on {msg['payload'][0]['type']}: {num_known} known")
@@ -325,15 +328,16 @@ class RQTHomeUI(qtw.QMainWindow):
         self.ui_action("media","schedule")
         self.ui_action("media", "triggers")
         # nodes
-        self.ui_action("nodes","status")
+        self.ui_action("nodes","view")
         self.ui_action("nodes","messages")
         self.ui_action("nodes","run...")        
         # devices
-        self.ui_action("devices","status")
+        self.ui_action("devices","view")
         self.ui_action("devices","messages")
         self.ui_action("devices","all known")
         self.ui_action("devices","identify")     
         # diagnostics
+        self.ui_action("diagnostics","events")
         self.ui_action("diagnostics","measurements")        
         self.ui_action("diagnostics","ros console")
         # help
@@ -462,6 +466,8 @@ class RQTHomeUI(qtw.QMainWindow):
         self.frame_dict[menu_name][item_name]['rh_panel'] = rh_panel
         self.frame_dict[menu_name][item_name]['footer'] = footer_panel
         self.frame_dict[menu_name][item_name]['index'] = self.num_frames
+        if 'view' in item_name:
+            self.view_list.append(self.num_frames)
         self.num_frames += 1
         custom_method_name = "setup_frame_" + menu_name.replace(' ','_') + "_" + item_name.replace(' ','_')
         if hasattr(self, custom_method_name):
@@ -550,7 +556,7 @@ class RQTHomeUI(qtw.QMainWindow):
         current -= 1
         if current < 0:
             current = count-1
-        self.stack.setCurrentIndex(current)      
+        self.stack.setCurrentIndex(current)    
         
     def home_page(self):
         self.stack.setCurrentIndex(0)   

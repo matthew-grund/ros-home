@@ -18,12 +18,12 @@ class SunTracker(Node):
 
     def __init__(self):
         super().__init__('sun_tracker')
-        self.publisher_ = self.create_publisher(String, 'sun', 10)
+        self.publisher_ = self.create_publisher(String, '/environment/sun', 10)
         self.timer_period = 10.0  # seconds
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
         self.config_subscription = self.create_subscription(
             String,
-            'settings',
+            '/home/configuration',
             self.config_listener_callback,
             10)
         self.config_subscription
@@ -40,7 +40,7 @@ class SunTracker(Node):
         sundict['previous_event'] = self.prev_event
         sundict['secs_remaining'] = self.secs_remaining
         sundict['secs_elapsed'] = self.secs_elapsed
-        sundict['events'] = self.sun_event
+        sundict['/diagnostics/events'] = self.sun_event
         msgdict = {}
         msgdict['index'] = self.i
         msgdict['interval'] = self.timer_period
