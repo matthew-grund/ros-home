@@ -91,6 +91,7 @@ class EventDetector(Node):
         self.i = 0
         self.dev_index = 0
         self.event_index = 0
+        
         self.publisher_devices = self.create_publisher(String, 'known_net_devices', 10)
         self.wx_latest_conditions = ""
         self.wx_recent_forecasts = {}
