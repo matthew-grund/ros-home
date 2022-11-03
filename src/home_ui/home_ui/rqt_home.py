@@ -25,7 +25,7 @@ class ROSHomeUI(Node):
 
     def __init__(self):
         super().__init__('rqt_home')
-        self.publisher_cmds = self.create_publisher(String, 'commands', 10)
+        self.publisher_cmds = self.create_publisher(String, '/people/commands', 10)
         self.config_subscription = self.create_subscription(String,
             '/home/configuration',
             self.config_listener_callback,10)
