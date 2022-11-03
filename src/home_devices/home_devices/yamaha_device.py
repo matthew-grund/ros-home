@@ -56,17 +56,18 @@ class YamahaDevice(Node):
             if ret.status_code == 200:      # success! 
                 status = json.loads(ret.text)
                 self.yamaha_devices[ip]['status'] = status
-                self.get_logger().info(f"Yamaha: got status for {self.yamaha_devices[ip]['name']}: power:{status['power']} volume:{status['actual_volume']['value']} dB")  
-            # play info
-            get_play_url = base_url + "v1/netusb/getPlayInfo"
-            try:    
-                ret = requests.get(get_play_url)
-            except:
-                return {} # FIXME - a better error value?
-            if ret.status_code == 200:      # success!
-                play = json.loads(ret.text)
-                self.yamaha_devices[ip]['play'] = play
-                self.get_logger().info(f"Yamaha: got play info for {self.yamaha_devices[ip]['name']}: {play['input']}::{play['track']}:::{play['playback']} ")     
+                self.get_logger().info(f"Yamaha: got status for {self.yamaha_devices[ip]['name']}: power:{status['power']} volume:{status['actual_volume']['value']} dB") 
+            if status['power'] == 'on':     
+                # play info
+                get_play_url = base_url + "v1/netusb/getPlayInfo"
+                try:    
+                    ret = requests.get(get_play_url)
+                except:
+                    return {} # FIXME - a better error value?
+                if ret.status_code == 200:      # success!
+                    play = json.loads(ret.text)
+                    self.yamaha_devices[ip]['play'] = play
+                    self.get_logger().info(f"Yamaha: got play info for {self.yamaha_devices[ip]['name']}: {play['input']}::{play['track']}:::{play['playback']} ")     
             # publish an update    
             m = {}
             m['index'] = self.i
