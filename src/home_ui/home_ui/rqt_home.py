@@ -41,7 +41,6 @@ class ROSHomeUI(Node):
         self.known_devices_subscription = self.create_subscription(String,
             '/devices/known/network',
             self.devices_listener_callback,10)
-        
         self.nodes_subscription = self.create_subscription(String,
             '/nodes/list',
             self.nodes_listener_callback,10)

@@ -67,7 +67,10 @@ class YamahaDevice(Node):
                 if ret.status_code == 200:      # success!
                     play = json.loads(ret.text)
                     self.yamaha_devices[ip]['play'] = play
-                    self.get_logger().info(f"Yamaha: got play info for {self.yamaha_devices[ip]['name']}: {play['input']}::{play['track']}:::{play['playback']} ")     
+                    self.get_logger().info(f"Yamaha: got play info for {self.yamaha_devices[ip]['name']}: {play['input']}::{play['track']}:::{play['playback']} ") 
+            else:
+                self.yamaha_devices[ip]['play'] = {}
+                
             # publish an update    
             m = {}
             m['index'] = self.i
