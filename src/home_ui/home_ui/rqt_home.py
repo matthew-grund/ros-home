@@ -16,6 +16,7 @@ from dateutil import parser
 import math
 import sys
 import os
+import urllib.request
 
 import PyQt6.QtWidgets as qtw
 import PyQt6.QtCore as qtc
@@ -47,6 +48,9 @@ class ROSHomeUI(Node):
         self.nodes_subscription = self.create_subscription(String,
             '/nodes/list',
             self.nodes_listener_callback,10)
+        self.media_status_subscription = self.create_subscription(String,
+            '/media/status',
+            self.media_listener_callback,10)
                                                
         self.spin_count = 0
         self.lighting_msg_count = 0
@@ -55,6 +59,8 @@ class ROSHomeUI(Node):
         self.devices_msg_count = 0
         self.nodes_msg_count = 0
         self.scene_msg_count = 0
+        self.media_msg_count = 0
+
         
     def send_command(self):
         if len(self.commands):
@@ -87,7 +93,7 @@ class ROSHomeUI(Node):
 
     def lighting_scenes_callback(self,msg):
         msg = json.loads(msg.data)
-        self.get_logger().info(f"Got lighting scene update for {len(msg['payload']['today'])}: {msg['payload']['previous_scene']}" )
+        self.get_logger().info(f"Got lighting scene update for {msg['payload']['today']}: {msg['payload']['previous_scene']}" )
         self.latest_scene_msg = msg
         self.scene_msg_count +=1 
 
@@ -121,6 +127,13 @@ class ROSHomeUI(Node):
         self.latest_nodes_msg = msg
         self.nodes_msg_count +=1 
 
+    def media_listener_callback(self,msg):
+        msg = json.loads(msg.data)
+        if msg['index'] % 7 == 0:
+            self.get_logger().info(f"Media: got update from {msg['payload']['name']}")
+        self.latest_media_msg = msg
+        self.media_msg_count +=1 
+
               
 #######################################################################
 #
@@ -146,6 +159,8 @@ class RQTHomeUI(qtw.QMainWindow):
         
         self.last_wx_temp_deg_f = 99 
         self.view_list = []
+        self.last_art_url = ""
+
         # todo: center the app on the screen
         style_sheet ='''
             QWidget { 
@@ -171,25 +186,10 @@ class RQTHomeUI(qtw.QMainWindow):
             }
         '''
         self.app.setStyleSheet(style_sheet)
-        self.frame_style = qtw.QFrame.Shape.Panel  # Panel for debugging, NoFrame for a clean look
-       
-        self.big_clock  = qtw.QLabel()
-        self.big_clock.setAccessibleName("big_clock")
-        self.big_clock.setObjectName("big_clock")      
-        font = self.big_clock.font()
-        font.setPointSize(48)
-        self.big_clock.setFont(font)
-        self.big_clock.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter | qtc.Qt.AlignmentFlag.AlignVCenter)
-        self.big_clock.setFrameStyle(self.frame_style)
-        self.big_date  = qtw.QLabel()
-        self.big_date.setAccessibleName("big_date")
-        self.big_date.setObjectName("big_date")      
-        font = self.big_date.font()
-        font.setPointSize(20)
-        self.big_date.setFont(font)
-        self.big_date.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter | qtc.Qt.AlignmentFlag.AlignVCenter)
-        self.big_date.setFrameStyle(self.frame_style)       
-        
+        self.frame_style = qtw.QFrame.Shape.NoFrame  # Panel for debugging, NoFrame for a clean look    
+        self.big_clock = self.styled_label(48)
+        self.big_date  = self.styled_label(20)
+ 
         self.max_nodes_running = 0
                
         self.setup_actions()
@@ -215,6 +215,7 @@ class RQTHomeUI(qtw.QMainWindow):
         self.devices_msg_count = self.ros_node.devices_msg_count
         self.nodes_msg_count = self.ros_node.nodes_msg_count
         self.scene_msg_count = self.ros_node.scene_msg_count
+        self.media_msg_count = self.ros_node.media_msg_count
         rclpy.spin_once(self.ros_node,timeout_sec=0.075) 
         self.ros_node.spin_count += 1 
         self.check_for_ros_msgs()
@@ -228,27 +229,31 @@ class RQTHomeUI(qtw.QMainWindow):
         self.big_date.setText(self.date_str)
         self.menu_clock.setText(self.clock_str)
         self.clock_tick_timer.singleShot(999,self.ui_clock_timer_callback)
+
     
     def check_for_ros_msgs(self):
-        if self.lighting_msg_count < self.ros_node.lighting_msg_count:
+        if self.lighting_msg_count < self.ros_node.lighting_msg_count:          # lighting msg
             self.lighting_msg_count = self.ros_node.lighting_msg_count
             self.ui_parse_lighting_msg(self.ros_node.latest_lighting_msg)
-        if self.event_msg_count < self.ros_node.event_msg_count:
+        if self.event_msg_count < self.ros_node.event_msg_count:                # event msg
             self.event_msg_count = self.ros_node.event_msg_count
             self.ui_parse_event_msg(self.ros_node.latest_event_msg)
-        if self.conditions_msg_count < self.ros_node.conditions_msg_count:
+        if self.conditions_msg_count < self.ros_node.conditions_msg_count:      # weather conditions msg
             self.conditions_msg_count = self.ros_node.conditions_msg_count
             self.ui_parse_conditions_msg(self.ros_node.latest_conditions_msg)    
-        if self.devices_msg_count < self.ros_node.devices_msg_count:
+        if self.devices_msg_count < self.ros_node.devices_msg_count:            # known devices msg
             self.devices_msg_count = self.ros_node.devices_msg_count
             self.ui_parse_devices_msg(self.ros_node.latest_devices_msg)    
-        if self.nodes_msg_count < self.ros_node.nodes_msg_count:
+        if self.nodes_msg_count < self.ros_node.nodes_msg_count:                # nodes msg
             self.nodes_msg_count = self.ros_node.nodes_msg_count
             self.ui_parse_nodes_msg(self.ros_node.latest_nodes_msg)    
-        if self.scene_msg_count < self.ros_node.scene_msg_count:
+        if self.scene_msg_count < self.ros_node.scene_msg_count:                # lighting scenes msg
             self.scene_msg_count = self.ros_node.scene_msg_count
             self.ui_parse_scene_msg(self.ros_node.latest_scene_msg) 
-                    
+        if self.media_msg_count < self.ros_node.media_msg_count:                # media msg  
+            self.media_msg_count = self.ros_node.media_msg_count
+            self.ui_parse_media_msg(self.ros_node.latest_media_msg) 
+                        
     def ui_parse_lighting_msg(self,msg):
         self.statusBar().showMessage(f"Got status for {len(msg['payload']['lights'])} {msg['payload']['type']} lights.")
         t = datetime.now()
@@ -279,6 +284,13 @@ class RQTHomeUI(qtw.QMainWindow):
         self.next_scene_time_label.setText(f"{hrs_remain} hrs")           
            
     def ui_parse_conditions_msg(self,msg):
+        icon_url = msg['payload']['icon']
+        if len(icon_url):
+            data = urllib.request.urlopen(icon_url).read()
+            image = qtg.QImage()
+            image.loadFromData(data)
+            scaled_image = image.scaledToWidth(96)
+            self.summary_wx_cond_icon.setPixmap(qtg.QPixmap(scaled_image))
         observations = msg['payload']
         if (type(observations['temperature']['value']) == int) or \
             (type(observations['temperature']['value']) == float):
@@ -293,8 +305,7 @@ class RQTHomeUI(qtw.QMainWindow):
         ts = t.strftime("[%H:%M:%S.%f")[:-3]+']'
         num_known = 0
         dev_list = msg['payload']
-        for dev in dev_list:
-            
+        for dev in dev_list:    
             if dev['is_known']:
                 num_known += 1
         self.devices_summary_label.setText(f"{ts}   {len(msg['payload'])} network hosts found on {msg['payload'][0]['type']}: {num_known} known")
@@ -307,6 +318,28 @@ class RQTHomeUI(qtw.QMainWindow):
             self.max_nodes_running = num_nodes
         self.nodes_summary_label.setText(f"{ts}   ROS Home: {num_nodes} ROS nodes currently running. (max is {self.max_nodes_running} nodes running).")
     
+    def ui_parse_media_msg(self,msg):
+        if msg['payload']['name'] == 'Living Room Stereo':
+            art_url = msg['payload']['play']['albumart_url']
+            if self.last_art_url != art_url:
+                if len(art_url):
+                    # print(art_url)
+                    self.last_art_url = art_url
+                    full_url = "http://" + msg['payload']['ip'] + art_url
+                    data = urllib.request.urlopen(full_url).read()
+                    image = qtg.QImage()
+                    image.loadFromData(data)
+                    scaled_image = image.scaledToWidth(248)
+                    self.album_art_label.setPixmap(qtg.QPixmap(scaled_image))
+            song = msg['payload']['play']['track']
+            if len(song) > 28:
+                song = song[:26] +'...'       
+            self.playback_song_label.setText(song)
+            self.playback_album_label.setText(msg['payload']['play']['album'])
+            self.playback_artist_label.setText(msg['payload']['play']['artist'])
+
+            
+        
     def ui_action(self,parent_label, label):
         a = qtg.QAction(label,self)
         a.triggered.connect(lambda : self.menu_callback(parent_label,label))
@@ -421,7 +454,7 @@ class RQTHomeUI(qtw.QMainWindow):
             vert_layout.addWidget(title_label)
         main_horiz_layout = qtw.QHBoxLayout()
         lh_panel = qtw.QFrame()
-        #lh_panel.setMinimumSize(64,128)
+
         lh_panel.setFrameStyle(self.frame_style)
         lh_panel.setObjectName(menu_name + "_" + item_name + "_lh_panel")
         layout = qtw.QVBoxLayout()
@@ -430,16 +463,16 @@ class RQTHomeUI(qtw.QMainWindow):
         layout.addWidget(label)
         lh_panel.setLayout(layout)   
         center_panel = qtw.QFrame()
-        # center_panel.setMinimumSize(64,128)
+
         center_panel.setFrameStyle(self.frame_style)
         center_panel.setObjectName(menu_name + "_" + item_name + "_center_panel")
         layout = qtw.QVBoxLayout()
         label = qtw.QLabel("center_panel")        
         label.setFrameStyle(self.frame_style)
         layout.addWidget(label)
-        center_panel.setLayout(layout)   
+        center_panel.setLayout(layout)
+           
         rh_panel = qtw.QFrame()
-        #rh_panel.setMinimumSize(64,128)
         rh_panel.setFrameStyle(self.frame_style)
         rh_panel.setObjectName(menu_name + "_" + item_name + "_rh_panel")
         layout = qtw.QVBoxLayout()
@@ -452,15 +485,15 @@ class RQTHomeUI(qtw.QMainWindow):
         main_horiz_layout.addWidget(rh_panel)
         main_horiz_layout.setSpacing(128)
         footer_panel = qtw.QFrame()
-        # footer_panel.setMinimumHeight(64)
-        # footer_panel.setMaximumHeight(64)
+
         footer_panel.setFrameStyle(self.frame_style)
         footer_panel.setObjectName(menu_name + "_" + item_name + "_footer_panel")
         layout = qtw.QVBoxLayout()
         label = qtw.QLabel("footer_panel")
         label.setFrameStyle(self.frame_style)
         layout.addWidget(label)
-        footer_panel.setLayout(layout)       
+        footer_panel.setLayout(layout)    
+           
         # bring it on home
         vert_layout.addLayout(main_horiz_layout)
         vert_layout.addWidget(footer_panel)
@@ -499,6 +532,8 @@ class RQTHomeUI(qtw.QMainWindow):
         # remove the last/only widget, then add summary messages
         if (num_widgets):
             layout.removeWidget(layout.itemAt(num_widgets-1).widget())
+        dummy_label = self.styled_label(20)
+        layout.addWidget(dummy_label)    
         self.lighting_summary_label = qtw.QLabel()
         self.lighting_summary_label.setFrameStyle(self.frame_style)
         layout.addWidget(self.lighting_summary_label)
@@ -510,11 +545,14 @@ class RQTHomeUI(qtw.QMainWindow):
         layout.addWidget(self.devices_summary_label)
         
         frame = f['lh_panel']
+        frame.setMinimumWidth(256)
         layout = frame.layout()
         num_widgets = layout.count()    
          # use the last/only widget for lighting summary
         if (num_widgets):
             layout.removeWidget(layout.itemAt(num_widgets-1).widget())
+        self.summary_wx_cond_icon =  self.styled_label(48)   
+        layout.addWidget(self.summary_wx_cond_icon)
         self.summary_wx_temp_label = self.styled_label(64)
         self.summary_wx_temp_label.setAccessibleName("wx_temp")
         self.summary_wx_temp_label.setObjectName("wx_temp")
@@ -537,6 +575,8 @@ class RQTHomeUI(qtw.QMainWindow):
         self.current_scene_label = self.styled_label(48) 
         self.current_scene_label.setText("<current>") 
         layout.addWidget(self.current_scene_label)  
+        dummy_label = self.styled_label(20)
+        layout.addWidget(dummy_label)    
         next_label = self.styled_label(24)    
         next_label.setText("Next Scene") 
         layout.addWidget(next_label)
@@ -546,7 +586,22 @@ class RQTHomeUI(qtw.QMainWindow):
         self.next_scene_time_label = self.styled_label(24)  
         self.next_scene_time_label.setText("<time>")  
         layout.addWidget(self.next_scene_time_label)
-    
+        
+        frame = f['rh_panel']
+        frame.setMinimumWidth(256)
+        layout = frame.layout()
+        num_widgets = layout.count()
+        if (num_widgets):
+            layout.removeWidget(layout.itemAt(num_widgets-1).widget())
+        self.album_art_label = self.styled_label(24)
+        layout.addWidget(self.album_art_label)
+        self.playback_song_label = self.styled_label(18)
+        layout.addWidget(self.playback_song_label)
+        self.playback_album_label = self.styled_label(14)
+        layout.addWidget(self.playback_album_label)
+        self.playback_artist_label = self.styled_label(12)
+        layout.addWidget(self.playback_artist_label)
+        
     def styled_label(self,fontsize): 
         styled_label = qtw.QLabel()
         font = styled_label.font()
