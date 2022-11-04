@@ -289,7 +289,7 @@ class RQTHomeUI(qtw.QMainWindow):
             data = urllib.request.urlopen(icon_url).read()
             image = qtg.QImage()
             image.loadFromData(data)
-            scaled_image = image.scaledToWidth(96)
+            scaled_image = image.scaledToWidth(168)
             self.summary_wx_cond_icon.setPixmap(qtg.QPixmap(scaled_image))
         observations = msg['payload']
         if (type(observations['temperature']['value']) == int) or \
@@ -332,10 +332,13 @@ class RQTHomeUI(qtw.QMainWindow):
                     scaled_image = image.scaledToWidth(248)
                     self.album_art_label.setPixmap(qtg.QPixmap(scaled_image))
             song = msg['payload']['play']['track']
-            if len(song) > 28:
-                song = song[:26] +'...'       
+            if len(song) > 27:
+                song = song[:25] +'...'       
             self.playback_song_label.setText(song)
-            self.playback_album_label.setText(msg['payload']['play']['album'])
+            album = msg['payload']['play']['album']
+            if len(album) > 35:
+                album = album[:33] +'...'
+            self.playback_album_label.setText(album)
             self.playback_artist_label.setText(msg['payload']['play']['artist'])
 
             
@@ -526,6 +529,7 @@ class RQTHomeUI(qtw.QMainWindow):
                 customize(self.frame_dict[menu_name][item_name])
         
     def setup_frame_home_overview(self,f):
+        side_panel_width = 320
         frame = f['footer']
         layout = frame.layout()
         num_widgets = layout.count()
@@ -545,7 +549,7 @@ class RQTHomeUI(qtw.QMainWindow):
         layout.addWidget(self.devices_summary_label)
         
         frame = f['lh_panel']
-        frame.setMinimumWidth(256)
+        frame.setMinimumWidth(side_panel_width)
         layout = frame.layout()
         num_widgets = layout.count()    
          # use the last/only widget for lighting summary
@@ -572,7 +576,7 @@ class RQTHomeUI(qtw.QMainWindow):
         scene_label = self.styled_label(24)
         scene_label.setText("Current Scene") 
         layout.addWidget(scene_label)
-        self.current_scene_label = self.styled_label(48) 
+        self.current_scene_label = self.styled_label(64) 
         self.current_scene_label.setText("<current>") 
         layout.addWidget(self.current_scene_label)  
         dummy_label = self.styled_label(20)
@@ -588,7 +592,7 @@ class RQTHomeUI(qtw.QMainWindow):
         layout.addWidget(self.next_scene_time_label)
         
         frame = f['rh_panel']
-        frame.setMinimumWidth(256)
+        frame.setMinimumWidth(side_panel_width)
         layout = frame.layout()
         num_widgets = layout.count()
         if (num_widgets):
