@@ -17,6 +17,7 @@ import math
 import sys
 import os
 import urllib.request
+from types import NoneType
 
 import PyQt6.QtWidgets as qtw
 import PyQt6.QtCore as qtc
@@ -285,7 +286,7 @@ class RQTHomeUI(qtw.QMainWindow):
            
     def ui_parse_conditions_msg(self,msg):
         icon_url = msg['payload']['icon']
-        if len(icon_url):
+        if type(icon_url) != NoneType and len(icon_url) :
             data = urllib.request.urlopen(icon_url).read()
             image = qtg.QImage()
             image.loadFromData(data)
@@ -319,29 +320,33 @@ class RQTHomeUI(qtw.QMainWindow):
         self.nodes_summary_label.setText(f"{ts}   ROS Home: {num_nodes} ROS nodes currently running. (max is {self.max_nodes_running} nodes running).")
     
     def ui_parse_media_msg(self,msg):
-        if msg['payload']['name'] == 'Living Room Stereo':
-            art_url = msg['payload']['play']['albumart_url']
-            if self.last_art_url != art_url:
-                if len(art_url):
-                    # print(art_url)
-                    self.last_art_url = art_url
-                    full_url = "http://" + msg['payload']['ip'] + art_url
-                    data = urllib.request.urlopen(full_url).read()
-                    image = qtg.QImage()
-                    image.loadFromData(data)
-                    scaled_image = image.scaledToWidth(248)
-                    self.album_art_label.setPixmap(qtg.QPixmap(scaled_image))
-            song = msg['payload']['play']['track']
-            if len(song) > 27:
-                song = song[:25] +'...'       
-            self.playback_song_label.setText(song)
-            album = msg['payload']['play']['album']
-            if len(album) > 35:
-                album = album[:33] +'...'
-            self.playback_album_label.setText(album)
-            self.playback_artist_label.setText(msg['payload']['play']['artist'])
-
-            
+        if msg['payload']['status']['power'] == 'on':
+            if 'play' in msg['payload'] and 'albumart_url' in msg['payload']['play']:
+                art_url = msg['payload']['play']['albumart_url']
+                if self.last_art_url != art_url:
+                    if len(art_url):
+                        # print(art_url)
+                        self.last_art_url = art_url
+                        full_url = "http://" + msg['payload']['ip'] + art_url
+                        data = urllib.request.urlopen(full_url).read()
+                        image = qtg.QImage()
+                        image.loadFromData(data)
+                        scaled_image = image.scaledToWidth(128)
+                        self.album_art_label.setPixmap(qtg.QPixmap(scaled_image))
+                        song = msg['payload']['play']['track']
+                        if len(song) > 27:
+                            song = song[:25] +'...'       
+                        self.playback_song_label.setText(song)
+                        album = msg['payload']['play']['album']
+                        if len(album) > 35:
+                            album = album[:33] +'...'
+                        self.playback_album_label.setText(album)
+                        self.playback_artist_label.setText(msg['payload']['play']['artist'])
+        else:
+            self.playback_song_label.setText(msg['payload']['name'] + ' is off.')
+            self.playback_album_label.setText('')
+            self.playback_artist_label.setText('')
+            self.album_art_label.clear()
         
     def ui_action(self,parent_label, label):
         a = qtg.QAction(label,self)

@@ -38,7 +38,7 @@ class NetworkDeviceDiscoverer(Node):
         scapy.conf.verb = 0 
         self.ssid = "Unknown"
         self.need_mac_vendor_update = True       
-        self.mac.update_vendors()
+        # self.mac.update_vendors()
 
     def timer_callback(self):
         self.devices = self.discover_home()
@@ -169,9 +169,16 @@ class NetworkDeviceDiscoverer(Node):
 
         if ret.status_code == 200:      # success! 
             yamaha = xmltodict.parse(ret.text)
-            yamaha = yamaha['root']
-            yamaha = yamaha['device']
+            yamaha = yamaha['root']['device']
             if "iconList" in yamaha:
+                icon_list = yamaha['iconList']['icon']
+                max_width = 0
+                max_icon = {}
+                for icon in icon_list:
+                    if int(icon['width']) > max_width:
+                        max_icon = icon
+                        max_width = int(icon['width'])
+                yamaha['device_icon_url'] =  "http://" + ip + ":" + "49154" + max_icon['url']
                 yamaha.pop('iconList')
             if "serviceList" in yamaha:
                 yamaha.pop('serviceList')    
@@ -194,39 +201,48 @@ class NetworkDeviceDiscoverer(Node):
 
         if device['vendor'] == "Arcadyan Corporation":   # yamaha receivers, others?
             device = self.identify_arcadyan_device(device)
-            device['is_known'] = True        
+            if 'is_known' not in device:
+                device['is_known'] = False        
         
         elif device['vendor'] == 'BSH Hausgeräte GmbH':  # bosch home connect
             device = self.identify_bosch_device(device)
-            device['is_known'] = True                    
+            if 'is_known' not in device:
+                device['is_known'] = False                    
 
         elif device['vendor'] == 'Google, Inc.': # chromecasts and google homes
             device = self.identify_google_device(device)
-            device["is_known"] = True
+            if 'is_known' not in device:
+                device['is_known'] = False  
 
         elif device['vendor'] == 'LG Innotech': # LG  TVs
             device = self.identify_lg_device(device)
-            device["is_known"] = True
+            if 'is_known' not in device:
+                device['is_known'] = False  
 
         elif device['vendor'] == 'Microsoft Corporation': # xboxen, etc.
             device = self.identify_microsoft_device(device)
-            device["is_known"] = True
+            if 'is_known' not in device:
+                device['is_known'] = False  
 
         elif device['vendor'] == 'Nest Labs Inc.':
             device = self.identify_nest_device(device)
-            device["is_known"] = True            
+            if 'is_known' not in device:
+                device['is_known'] = False              
 
         elif device['vendor'] =='Technicolor CH USA Inc.':   # lots of routers and modems and DirectTV
             device = self.identify_technicolor_device(device)
-            device['is_known'] = True
+            if 'is_known' not in device:
+                device['is_known'] = False  
 
         elif device['vendor'] == 'Texas Instruments':
             device = self.identify_ti_device(device)
-            device['is_known'] = True
+            if 'is_known' not in device:
+                device['is_known'] = False  
 
         elif device['vendor'] == 'Wyze Labs Inc':
             device = self.identify_wyze_device(device)
-            device['is_known'] = True
+            if 'is_known' not in device:
+                device['is_known'] = False  
 
         else:
             device['type'] = 'Unknown'
@@ -245,11 +261,14 @@ class NetworkDeviceDiscoverer(Node):
             device['name'] = yamaha['friendlyName'] 
             device['model'] = yamaha['modelName']
             device['serial_number'] = yamaha['serialNumber']
+            device['device_icon_url'] = yamaha['device_icon_url']
             device['has_bluetooth'] = True
+            device['is_known'] = True
         else:  
             device['type'] = 'Arcadyan' 
             device['name'] = 'Unknown' 
             device['model'] = 'Unknown'
+
 
         return device
 
@@ -265,7 +284,8 @@ class NetworkDeviceDiscoverer(Node):
         if len(eureka):
             device['name'] = eureka['name']
             device['vendor_config'] = eureka 
-        device['has_bluetooth'] = True
+            device['is_known'] = True
+            device['has_bluetooth'] = True
         device['model'] = 'Unknown'
         return device
 
@@ -283,12 +303,6 @@ class NetworkDeviceDiscoverer(Node):
         device['product'] = 'Unknown'
         return device
 
-    def identify_nest_device(self, device):
-        device['type'] = 'Nest Device'   
-        device['name'] = 'Unknown' 
-        device['model'] = 'Unknown'
-        return device
-
     def identify_technicolor_device(self, device):
         device['type'] = 'WiFi Router'   
         device['name'] = self.ssid   # FIXME - is this the best 'name'?
@@ -303,7 +317,9 @@ class NetworkDeviceDiscoverer(Node):
             device['name'] = yamaha['friendlyName'] 
             device['model'] = yamaha['modelName']
             device['serial_number'] = yamaha['serialNumber']
-            device['has_bluetooth'] = True
+            device['device_icon_url'] = yamaha['device_icon_url']
+            device['has_bluetooth'] = True  
+            device['is_known'] = True
         else:  
             device['type'] = 'Texas Instruments'
             device['name'] = 'Unknown' 
