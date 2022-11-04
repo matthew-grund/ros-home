@@ -345,9 +345,10 @@ class RQTHomeUI(qtw.QMainWindow):
                             album = album[:33] +'...'
                         self.playback_album_label.setText(album)
                         self.playback_artist_label.setText(self.best_renderer['play']['artist'])
-                    else:    
-                        self.playback_song_label.setText(self.best_renderer['name'] + ' is on.')
-                        self.playback_album_label.setText('')
+                    else: 
+                        self.last_art_url = ""   
+                        self.playback_song_label.setText(self.best_renderer['name'] + ' is ON')
+                        self.playback_album_label.setText('input is '+self.best_renderer['status']['input'])
                         self.playback_artist_label.setText('')
                         data = urllib.request.urlopen(self.best_renderer['device_icon_url']).read()
                         image = qtg.QImage()
@@ -355,64 +356,28 @@ class RQTHomeUI(qtw.QMainWindow):
                         scaled_image = image.scaledToWidth(self.overview_icon_width)
                         self.album_art_label.setPixmap(qtg.QPixmap(scaled_image))
         else:
-            self.playback_song_label.setText(self.best_renderer['name'] + ' is off.')
+            self.last_art_url = ""
+            self.playback_song_label.setText(self.best_renderer['name'] + ' is OFF')
             self.playback_album_label.setText('')
             self.playback_artist_label.setText('')
             data = urllib.request.urlopen(self.best_renderer['device_icon_url']).read()
             image = qtg.QImage()
             image.loadFromData(data)
             scaled_image = image.scaledToWidth(self.overview_icon_width)
-            self.album_art_label.setPixmap(qtg.QPixmap(scaled_image))
-            
-        if len(self.best_renderer_2) and self.best_renderer_2['status']['power'] == 'on': 
-                art_url = self.best_renderer_2['play']['albumart_url']
-                if self.last_art_url_2 != art_url:
-                    if len(art_url):
-                        # print(art_url)
-                        self.last_art_url_2 = art_url
-                        full_url = "http://" + self.best_renderer_2['ip'] + art_url
-                        data = urllib.request.urlopen(full_url).read()
-                        image = qtg.QImage()
-                        image.loadFromData(data)
-                        scaled_image = image.scaledToWidth(self.overview_icon_width)
-                        self.album_art_label_2.setPixmap(qtg.QPixmap(scaled_image))
-                        song = self.best_renderer_2['play']['track']
-                        if len(song) > 27:
-                            song = song[:25] +'...'       
-                        self.playback_song_label_2.setText(song)
-                        album = self['play']['album']
-                        if len(album) > 35:
-                            album = album[:33] +'...'
-                        self.playback_album_label_2.setText(album)
-                        self.playback_artist_label_2.setText(self.best_renderer_2['play']['artist'])
-                    else:    
-                        self.playback_song_label_2.setText(self.best_renderer_2['name'] + ' is on.')
-                        self.playback_album_label_2.setText('')
-                        self.playback_artist_label_2.setText('')
-                        data = urllib.request.urlopen(self.best_renderer_2['device_icon_url']).read()
-                        image = qtg.QImage()
-                        image.loadFromData(data)
-                        scaled_image = image.scaledToWidth(self.overview_icon_width)
-                        self.album_art_label_2.setPixmap(qtg.QPixmap(scaled_image))
-        else:
-                self.playback_song_label_2.clear()
-                self.playback_album_label_2.clear()
-                self.playback_artist_label_2.clear()
-                self.album_art_label_2.clear()
+            self.album_art_label.setPixmap(qtg.QPixmap(scaled_image))                
                 
-        
     def update_media_renderer_dict(self,msg):
             self.renderer_dict[msg['payload']['ip']] = msg['payload']
             best = self.find_most_active('')
             if len(best):
                self.best_renderer = self.renderer_dict[best]
             else:
-                self.best_renderer = {}   
-            best_2 = self.find_most_active(best)    
+                self.best_renderer = {}  
+            best_2 =  self.find_most_active(best)
             if len(best_2):
                self.best_renderer_2 = self.renderer_dict[best_2]
             else:
-               self.best_renderer_2 = {}    
+                self.best_renderer_2 = {}      
                
     def find_most_active(self,skip_ip):
         max_score = 0
@@ -422,14 +387,14 @@ class RQTHomeUI(qtw.QMainWindow):
                 score = 0
                 r = self.renderer_dict[ip]
                 if r['status']['power'] == "on":
-                    score += 200
+                    score += 300
                     if r['play']['playback'] == "play":
-                       score += 100
+                       score += 200
                        if r['status']['mute'] == False:
                            score += r['status']['volume'] / r['status']['max_volume'] * 100
                 if score >= max_score:
                     max_score = score
-                    max_ip = ip 
+                    max_ip = ip    
         return max_ip
                                   
     def ui_action(self,parent_label, label):
@@ -694,14 +659,17 @@ class RQTHomeUI(qtw.QMainWindow):
         layout.addWidget(self.playback_album_label)
         self.playback_artist_label = self.styled_label(12)
         layout.addWidget(self.playback_artist_label)
-        self.album_art_label_2 = self.styled_label(24)
-        layout.addWidget(self.album_art_label_2)
-        self.playback_song_label_2 = self.styled_label(18)
-        layout.addWidget(self.playback_song_label_2)
-        self.playback_album_label_2 = self.styled_label(14)
-        layout.addWidget(self.playback_album_label_2)
-        self.playback_artist_label_2 = self.styled_label(12)
-        layout.addWidget(self.playback_artist_label_2)
+        if False:
+            self.playback_spacer_label = self.styled_label(24)
+            layout.addWidget(self.playback_spacer_label)
+            self.album_art_label_2 = self.styled_label(24)
+            layout.addWidget(self.album_art_label_2)
+            self.playback_song_label_2 = self.styled_label(18)
+            layout.addWidget(self.playback_song_label_2)
+            self.playback_album_label_2 = self.styled_label(14)
+            layout.addWidget(self.playback_album_label_2)
+            self.playback_artist_label_2 = self.styled_label(12)
+            layout.addWidget(self.playback_artist_label_2)
         
     def styled_label(self,fontsize): 
         styled_label = qtw.QLabel()
