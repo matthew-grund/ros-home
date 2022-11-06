@@ -40,10 +40,18 @@ class QTCentralFrame(qtw.QFrame):
         vert_layout_name_str = menu_name + "_" + item_name + "_layout"
         self.vert_layout.setObjectName(vert_layout_name_str)
         self.vert_layout.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter | qtc.Qt.AlignmentFlag.AlignVCenter)
-        self.vert_layout.setSpacing(8)  
+        self.vert_layout.setSpacing(8)
+        self.title_frame = qtw.QFrame()
+        self.title_frame.setFrameStyle(self.frame_style)
+        self.title_layout = qtw.QVBoxLayout()
+        self.title_layout.setSpacing(8)
+        self.title_layout.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter | qtc.Qt.AlignmentFlag.AlignVCenter)
+        self.title_frame.setLayout(self.title_layout)
         self.title_label = self.styled_label(18)
         self.title_label.setText(menu_name + " : " + item_name )
-        self.vert_layout.addWidget(self.title_label)
+        self.title_layout.addWidget(self.title_label)
+        self.vert_layout.addWidget(self.title_frame)
+        
         self.main_horiz_layout = qtw.QHBoxLayout()
         # lh panel
         self.lh_panel = qtw.QFrame()

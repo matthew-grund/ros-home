@@ -385,13 +385,7 @@ class RQTHomeUI(qtw.QMainWindow):
         if menu_name not in self.frame_dict:
             self.frame_dict[menu_name] = {}
         self.frame_dict[menu_name][item_name] = {}
-        self.frame_dict[menu_name][item_name]['frame'] = panel.frame
-        self.frame_dict[menu_name][item_name]['title_label'] = panel.title_label
-        self.frame_dict[menu_name][item_name]['main_horiz_layout'] = panel.main_horiz_layout
-        self.frame_dict[menu_name][item_name]['lh_panel'] = panel.lh_panel
-        self.frame_dict[menu_name][item_name]['center_panel'] = panel.center_panel
-        self.frame_dict[menu_name][item_name]['rh_panel'] = panel.rh_panel
-        self.frame_dict[menu_name][item_name]['footer'] = panel.footer_panel
+        self.frame_dict[menu_name][item_name]['panel'] = panel
         self.frame_dict[menu_name][item_name]['index'] = self.num_frames
         if 'view' in item_name: 
             self.view_list.append(self.num_frames)
@@ -401,29 +395,40 @@ class RQTHomeUI(qtw.QMainWindow):
             customize = getattr(self,custom_method_name)
             if callable(customize):
                 # print(f"found customization method: {custom_method_name}")
-                customize(self.frame_dict[menu_name][item_name])
+                customize(self.frame_dict[menu_name][item_name]['panel'])
         
-    def setup_frame_home_overview(self,f):
+    def setup_frame_home_overview(self,panel):
         side_panel_width = 320
-        frame = f['footer']
-        layout = frame.layout()
-        num_widgets = layout.count()
+        # title
+        title_layout = panel.title_layout
+        #num_widgets = title_layout.count()
+        #if (num_widgets):
+        #    title_layout.removeWidget(title_layout.itemAt(num_widgets-1).widget())
+        panel.title_label.setText("")
+        title_layout.addWidget(self.big_clock)
+        title_layout.addWidget(self.big_date)   
+        dummy_label = self.styled_label(16)
+        title_layout.addWidget(dummy_label) 
+        # footer
+        frame = panel.footer_panel
+        footer_layout = frame.layout()
+        num_widgets = footer_layout.count()
         # remove the last/only widget, then add summary messages
         if (num_widgets):
-            layout.removeWidget(layout.itemAt(num_widgets-1).widget())
+            footer_layout.removeWidget(footer_layout.itemAt(num_widgets-1).widget())
         dummy_label = self.styled_label(20)
-        layout.addWidget(dummy_label)    
+        footer_layout.addWidget(dummy_label)    
         self.lighting_summary_label = qtw.QLabel()
         self.lighting_summary_label.setFrameStyle(self.frame_style)
-        layout.addWidget(self.lighting_summary_label)
+        footer_layout.addWidget(self.lighting_summary_label)
         self.nodes_summary_label = qtw.QLabel()
         self.nodes_summary_label.setFrameStyle(self.frame_style)
-        layout.addWidget(self.nodes_summary_label)
+        footer_layout.addWidget(self.nodes_summary_label)
         self.devices_summary_label = qtw.QLabel()
         self.devices_summary_label.setFrameStyle(self.frame_style)
-        layout.addWidget(self.devices_summary_label)
+        footer_layout.addWidget(self.devices_summary_label)
         
-        frame = f['lh_panel']
+        frame = panel.lh_panel
         frame.setMinimumWidth(side_panel_width)
         layout = frame.layout()
         num_widgets = layout.count()    
@@ -442,8 +447,8 @@ class RQTHomeUI(qtw.QMainWindow):
         self.summary_wx_desc_label.setObjectName("wx_desc")
         self.summary_wx_desc_label.setText("Desc")         
         layout.addWidget(self.summary_wx_desc_label)
-        
-        frame = f['center_panel']
+        # center panel
+        frame = panel.center_panel
         layout = frame.layout()
         num_widgets = layout.count()
         if (num_widgets):
@@ -465,8 +470,8 @@ class RQTHomeUI(qtw.QMainWindow):
         self.next_scene_time_label = self.styled_label(24)  
         self.next_scene_time_label.setText("<time>")  
         layout.addWidget(self.next_scene_time_label)
-        
-        frame = f['rh_panel']
+        # rh_panel
+        frame = panel.rh_panel
         frame.setMinimumWidth(side_panel_width)
         layout = frame.layout()
         num_widgets = layout.count()
@@ -480,17 +485,6 @@ class RQTHomeUI(qtw.QMainWindow):
         layout.addWidget(self.playback_album_label)
         self.playback_artist_label = self.styled_label(12)
         layout.addWidget(self.playback_artist_label)
-        if False:
-            self.playback_spacer_label = self.styled_label(24)
-            layout.addWidget(self.playback_spacer_label)
-            self.album_art_label_2 = self.styled_label(24)
-            layout.addWidget(self.album_art_label_2)
-            self.playback_song_label_2 = self.styled_label(18)
-            layout.addWidget(self.playback_song_label_2)
-            self.playback_album_label_2 = self.styled_label(14)
-            layout.addWidget(self.playback_album_label_2)
-            self.playback_artist_label_2 = self.styled_label(12)
-            layout.addWidget(self.playback_artist_label_2)
         
     def styled_label(self,fontsize): 
         styled_label = qtw.QLabel()
@@ -501,11 +495,11 @@ class RQTHomeUI(qtw.QMainWindow):
         styled_label.setFrameStyle(self.frame_style)  
         return styled_label   
            
-    def setup_frame_home_restart_system(self,f):
-        f['title_label'].setText("Restart ROS Home System?")
+    def setup_frame_home_restart_system(self, panel):
+        panel.title_label.setText("Restart ROS Home System?")
            
-    def setup_frame_lighting_view(self,f):
-        f['title_label'].setText("All Lights")
+    def setup_frame_lighting_view(self,panel):
+        panel.title_label.setText("All Lights")
 
     def setup_keyboard_shortcuts(self):
         self.shorty_quit_c = qtg.QShortcut(qtg.QKeySequence('Ctrl+C'), self)
