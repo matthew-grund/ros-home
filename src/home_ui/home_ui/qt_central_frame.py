@@ -20,9 +20,9 @@ import os
 import urllib.request
 from types import NoneType
 
-import PyQt6.QtWidgets as qtw
-import PyQt6.QtCore as qtc
-import PyQt6.QtGui as qtg
+import PySide6.QtWidgets as qtw
+import PySide6.QtCore as qtc
+import PySide6.QtGui as qtg
 
 class QTCentralFrame(qtw.QFrame):
     def __init__(self,parent, menu_name, item_name, frame_style):

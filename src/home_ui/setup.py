@@ -1,4 +1,5 @@
 from setuptools import setup
+import glob 
 
 package_name = 'home_ui'
 
@@ -10,6 +11,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('lib/python3.10/site-packages/homeui/', glob('home_ui/icons/*.png'))
     ],
     install_requires=['setuptools'],
     zip_safe=True,

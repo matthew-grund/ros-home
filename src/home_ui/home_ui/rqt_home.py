@@ -19,12 +19,15 @@ import os
 import urllib.request
 from types import NoneType
 
-import PyQt6.QtWidgets as qtw
-import PyQt6.QtCore as qtc
-import PyQt6.QtGui as qtg
+import PySide6.QtWidgets as qtw
+import PySide6.QtCore as qtc
+import PySide6.QtGui as qtg
 
 from . import ui_node
 from . import qt_central_frame
+from . import qt_left_toolbar   
+from . import central_widget_config  
+from . import rqt_style_sheet         
               
 #######################################################################
 #
@@ -38,14 +41,14 @@ class RQTHomeUI(qtw.QMainWindow):
         qtw.QMainWindow.__init__(self) 
         self.title = "ROS Home"
         self.description = "Interface to ROS Home"
-        self.version_str = "0.7.0" 
+        self.version_str = "0.7.3" 
         self.copyright_str = "(c) copyright 2022, Matthew Grund"
         self.screen = self.app.primaryScreen()
         self.screen_size =  self.screen.size()
         self.setWindowTitle(self.title)
         self.resize(
             int(self.screen_size.width()*0.75),
-            int(self.screen_size.height()*0.5)
+            int(self.screen_size.height()*0.65)
             )
         
         self.last_wx_temp_deg_f = 99 
@@ -56,42 +59,19 @@ class RQTHomeUI(qtw.QMainWindow):
         self.overview_icon_width = 228
 
         # todo: center the app on the screen
-        style_sheet ='''
-            QWidget { 
-                background-color: #23262A ; 
-                color: white ;
-            }
-            #menu_clock {
-                background-color: black ; 
-                color: white ;
-                padding: 3px 3px ;                
-            }
-            #big_clock {
-                color: white ;
-                padding: 8px 8px ;  
-            }
-            QStatusBar { 
-                background-color: black ; 
-                color: white ;
-            }
-            QMenuBar {
-                background-color: black ; 
-                color: white ;
-            }
-        '''
-        self.app.setStyleSheet(style_sheet)
+        self.app.setStyleSheet(rqt_style_sheet.sheet)
         self.frame_style = qtw.QFrame.Shape.Panel  # Panel for designing, NoFrame for a clean look    
         self.big_clock = self.styled_label(48)
         self.big_date  = self.styled_label(20)
  
         self.max_nodes_running = 0
                
-        self.setup_actions()
-        self.setup_top_menu()
-        self.setup_center_widget()
+        central_widget_config.setup(self)
+        self.setup_central_frame()
+        self.setup_left_toolbar()
         self.setup_keyboard_shortcuts()
         
-        # splash the version, to start
+        # sho thwe version, to start
         self.statusBar().showMessage(self.title + "      ver:" + self.version_str + "       " + self.copyright_str)
         
         self.ros_node = ui_node.ROSHomeUINode()
@@ -180,7 +160,10 @@ class RQTHomeUI(qtw.QMainWindow):
     def ui_parse_conditions_msg(self,msg):
         icon_url = msg['payload']['icon']
         if type(icon_url) != NoneType and len(icon_url) :
-            data = urllib.request.urlopen(icon_url).read()
+            try:
+                data = urllib.request.urlopen(icon_url).read()
+            except:
+                return    
             image = qtg.QImage()
             image.loadFromData(data)
             scaled_image = image.scaledToWidth(self.overview_icon_width)
@@ -297,81 +280,21 @@ class RQTHomeUI(qtw.QMainWindow):
             self.action_dict[parent_label] = {}
             self.action_dict[parent_label][label] = a
         
-    def setup_actions(self): 
-        self.action_dict = {}
-        # home menu
-        self.ui_action("home","overview")
-        self.ui_action("home","location")
-        self.ui_action("home","restart system")
-        # people menu
-        self.ui_action("people","view")
-        self.ui_action("people","add")       
-        self.ui_action("people","track")
-        # lighting menu
-        self.ui_action("lighting","view")
-        self.ui_action("lighting","scenes")
-        self.ui_action("lighting","schedule")
-        self.ui_action("lighting", "triggers")
-        # temperature menu
-        self.ui_action("temperature","view")
-        self.ui_action("temperature","modes")
-        self.ui_action("temperature","schedule")
-        self.ui_action("temperature","triggers")
-        # security menu
-        self.ui_action("security","view")
-        self.ui_action("security","arm")
-        self.ui_action("security","disarm")
-        self.ui_action("security","schedule")
-        # media menu
-        self.ui_action("media","view")
-        self.ui_action("media","stagings")
-        self.ui_action("media","schedule")
-        self.ui_action("media", "triggers")
-        # nodes
-        self.ui_action("nodes","view")
-        self.ui_action("nodes","messages")
-        self.ui_action("nodes","run...")        
-        # devices
-        self.ui_action("devices","view")
-        self.ui_action("devices","messages")
-        self.ui_action("devices","all known")
-        self.ui_action("devices","identify")     
-        # diagnostics
-        self.ui_action("diagnostics","events")
-        self.ui_action("diagnostics","measurements")        
-        self.ui_action("diagnostics","ros console")
-        # help
-        self.ui_action("help","getting started")
-        self.ui_action("help","about")
     
     def menu_callback(self,parent_name, action_name):   
-        print(parent_name + ":" + action_name)
+        print("Menu" + parent_name + ":" + action_name)
         self.statusBar().showMessage(parent_name + ":" + action_name)
         self.stack.setCurrentIndex(self.frame_dict[parent_name][action_name]['index'])
                        
-    def setup_top_menu(self):
-        self.top_menu = self.menuBar()  
-        self.menu_clock = qtw.QLabel()
-        self.menu_clock.setMaximumWidth(72)
-        self.menu_clock.setMinimumWidth(72)
-        self.menu_clock.setObjectName("menu_clock")
-        self.menu_clock.setAccessibleName("menu_clock")
-        self.top_menu.setCornerWidget(self.menu_clock)
-        # just loop through the action dict, populating the menu
-        for menu in self.action_dict:
-            m = self.top_menu.addMenu(menu)
-            for action in self.action_dict[menu]:
-                m.addAction(self.action_dict[menu][action])
-            font = m.font()
-            font.setPointSize(12)
-            m.setFont(font)
+    def toolbar_callback(self,parent_name, action_name):   
+        print("Toolbar" + parent_name + ":" + action_name)
+        self.statusBar().showMessage(parent_name + ":" + action_name)
+        self.stack.setCurrentIndex(self.frame_dict[parent_name][action_name]['index'])                   
         
     def setup_center_widget(self):    
-        self.central = qtw.QFrame()
-        self.stack = qtw.QStackedLayout()
-        self.central.setLayout(self.stack)
-        self.frame_dict = {}
-        self.num_frames = 0
+        self.central_widget = qtw.QWidget()
+        self.stack_layout = qtw.QStackedLayout()
+        self.central_idget.setLayout(self.stack_layout)
         # make a pane for each menu item        
         for menu_name in self.action_dict:
             for item_name in self.action_dict[menu_name]:
@@ -396,6 +319,9 @@ class RQTHomeUI(qtw.QMainWindow):
             if callable(customize):
                 # print(f"found customization method: {custom_method_name}")
                 customize(self.frame_dict[menu_name][item_name]['panel'])
+
+    def setup_left_toolbar(self):
+        self.left_toolbar = qt_left_toolbar.QTLeftToolBar(self)
         
     def setup_frame_home_overview(self,panel):
         side_panel_width = 320
