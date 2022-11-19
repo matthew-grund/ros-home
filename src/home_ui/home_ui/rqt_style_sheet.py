@@ -20,14 +20,14 @@ QWidget {
 }
 #big_clock {
     color: white ;
-                padding: 8px 8px ;  
-            }
-            QStatusBar { 
-                background-color: black ; 
-                color: white ;
-            }
-            QMenuBar {
-                background-color: black ; 
-                color: white ;
-            }
-        '''
+    padding: 8px 8px ;  
+}
+QStatusBar { 
+    background-color: black ; 
+    color: white ;
+}
+QMenuBar {
+    background-color: black ; 
+    color: white ;
+}
+'''

@@ -24,10 +24,10 @@ import PySide6.QtCore as qtc
 import PySide6.QtGui as qtg
 
 from . import ui_node
-from . import qt_central_frame
-from . import qt_left_toolbar   
-from . import central_widget_config  
-from . import rqt_style_sheet         
+from . import central_widget
+from . import qt_left_toolbar    
+from . import rqt_style_sheet
+from . import keyboard_shortcuts        
               
 #######################################################################
 #
@@ -52,24 +52,24 @@ class RQTHomeUI(qtw.QMainWindow):
             )
         
         self.last_wx_temp_deg_f = 99 
-        self.view_list = []
+        self.stacked_frame_dict = {}   # a dict of categories - each is a list of frame names
         self.last_art_url = ""
         self.last_art_url_2 = ""
         self.renderer_dict = {}
         self.overview_icon_width = 228
 
         # todo: center the app on the screen
-        self.app.setStyleSheet(rqt_style_sheet.sheet)
-        self.frame_style = qtw.QFrame.Shape.Panel  # Panel for designing, NoFrame for a clean look    
+        self.app.setStyleSheet(rqt_style_sheet.qss)
+        self.frame_style = qtw.QFrame.Shape.Panel  # .Panel for designing, .NoFrame for a clean look    
         self.big_clock = self.styled_label(48)
         self.big_date  = self.styled_label(20)
  
         self.max_nodes_running = 0
                
-        central_widget_config.setup(self)
-        self.setup_central_frame()
+        central_widget.configure(self)
+        central_widget.setup(self)
         self.setup_left_toolbar()
-        self.setup_keyboard_shortcuts()
+        keyboard_shortcuts.setup(self)
         
         # sho thwe version, to start
         self.statusBar().showMessage(self.title + "      ver:" + self.version_str + "       " + self.copyright_str)
@@ -103,7 +103,6 @@ class RQTHomeUI(qtw.QMainWindow):
         self.big_date.setText(self.date_str)
         self.menu_clock.setText(self.clock_str)
         self.clock_tick_timer.singleShot(999,self.ui_clock_timer_callback)
-
     
     def check_for_ros_msgs(self):
         if self.lighting_msg_count < self.ros_node.lighting_msg_count:          # lighting msg
@@ -269,17 +268,6 @@ class RQTHomeUI(qtw.QMainWindow):
                     max_score = score
                     max_ip = ip    
         return max_ip
-                                  
-    def ui_action(self,parent_label, label):
-        a = qtg.QAction(label,self)
-        a.triggered.connect(lambda : self.menu_callback(parent_label,label))
-        a.setEnabled(True)
-        if parent_label in self.action_dict:
-            self.action_dict[parent_label][label] = a 
-        else:
-            self.action_dict[parent_label] = {}
-            self.action_dict[parent_label][label] = a
-        
     
     def menu_callback(self,parent_name, action_name):   
         print("Menu" + parent_name + ":" + action_name)
@@ -290,35 +278,7 @@ class RQTHomeUI(qtw.QMainWindow):
         print("Toolbar" + parent_name + ":" + action_name)
         self.statusBar().showMessage(parent_name + ":" + action_name)
         self.stack.setCurrentIndex(self.frame_dict[parent_name][action_name]['index'])                   
-        
-    def setup_center_widget(self):    
-        self.central_widget = qtw.QWidget()
-        self.stack_layout = qtw.QStackedLayout()
-        self.central_idget.setLayout(self.stack_layout)
-        # make a pane for each menu item        
-        for menu_name in self.action_dict:
-            for item_name in self.action_dict[menu_name]:
-                self.add_stacked_panel(menu_name, item_name)    
-        self.setCentralWidget(self.central)
 
-    def add_stacked_panel(self, menu_name, item_name):
-        panel = qt_central_frame.QTCentralFrame(self.central,menu_name,item_name,self.frame_style)
-        self.stack.addWidget(panel.frame)
-        
-        if menu_name not in self.frame_dict:
-            self.frame_dict[menu_name] = {}
-        self.frame_dict[menu_name][item_name] = {}
-        self.frame_dict[menu_name][item_name]['panel'] = panel
-        self.frame_dict[menu_name][item_name]['index'] = self.num_frames
-        if 'view' in item_name: 
-            self.view_list.append(self.num_frames)
-        self.num_frames += 1
-        custom_method_name = "setup_frame_" + menu_name.replace(' ','_') + "_" + item_name.replace(' ','_')
-        if hasattr(self, custom_method_name):
-            customize = getattr(self,custom_method_name)
-            if callable(customize):
-                # print(f"found customization method: {custom_method_name}")
-                customize(self.frame_dict[menu_name][item_name]['panel'])
 
     def setup_left_toolbar(self):
         self.left_toolbar = qt_left_toolbar.QTLeftToolBar(self)
@@ -427,24 +387,7 @@ class RQTHomeUI(qtw.QMainWindow):
     def setup_frame_lighting_view(self,panel):
         panel.title_label.setText("All Lights")
 
-    def setup_keyboard_shortcuts(self):
-        self.shorty_quit_c = qtg.QShortcut(qtg.QKeySequence('Ctrl+C'), self)
-        self.shorty_quit_c.activated.connect(self.app.quit)
 
-        self.shorty_quit_q = qtg.QShortcut(qtg.QKeySequence('Ctrl+Q'), self)
-        self.shorty_quit_q.activated.connect(self.app.quit)
-        
-        self.shorty_next_page = qtg.QShortcut(qtg.QKeySequence('Tab'), self)
-        self.shorty_next_page.activated.connect(self.next_page)
-
-        self.shorty_prev_page = qtg.QShortcut(qtg.QKeySequence('Shift+Tab'), self)
-        self.shorty_prev_page.activated.connect(self.prev_page)
-       
-        self.shorty_home = qtg.QShortcut(qtg.QKeySequence('Home'), self)
-        self.shorty_home.activated.connect(self.home_page)
-
-        self.shorty_full = qtg.QShortcut(qtg.QKeySequence('Esc'), self)
-        self.shorty_full.activated.connect(self.max_min)
        
     def next_page(self):
         count = self.stack.count()

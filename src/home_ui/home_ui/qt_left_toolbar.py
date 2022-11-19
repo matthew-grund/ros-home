@@ -36,7 +36,7 @@ class QTLeftToolBar(qtw.QToolBar):
         q_main_window.addToolBar(qtc.Qt.LeftToolBarArea,self.toolbar)
         
         self.add_toolbar_spacer()
-        self.add_white_toolbar_button("home","overview","home_filled_96.png")
+        self.add_orange_toolbar_button("home","overview","home_filled_96.png")
         self.toolbar.addSeparator()
         self.toolbar.addSeparator()
         # self.add_toolbar_spacer()
