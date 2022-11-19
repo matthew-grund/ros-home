@@ -32,7 +32,7 @@ from . import keyboard_shortcuts
 #######################################################################
 #
 #     The class ROSHomeUI is the main class in this app. It owns a ROS
-#     node that gets spin_once() on a QT timer.
+#     node that gets spin_once() from a QT timer.
 #
 class RQTHomeUI(qtw.QMainWindow):
     
@@ -49,9 +49,13 @@ class RQTHomeUI(qtw.QMainWindow):
         self.resize(int(self.screen_size.width()*0.80),int(self.screen_size.height()*0.80))
         
         wingeo = self.frameGeometry()
+        print(wingeo)
         center = self.screen.geometry().center()
+        print(center)
         wingeo.moveCenter(center)
+        print(wingeo)
         self.move(wingeo.topLeft())
+        print(self.frameGeometry())
         
         self.last_wx_temp_deg_f = 99 
         self.stacked_frame_dict = {}   # a dict of categories - each is a list of frame names
@@ -60,7 +64,6 @@ class RQTHomeUI(qtw.QMainWindow):
         self.renderer_dict = {}
         self.overview_icon_width = 228
 
-        # todo: center the app on the screen
         self.app.setStyleSheet(rqt_style_sheet.qss)
         self.frame_style = qtw.QFrame.Shape.Panel  # .Panel for designing, .NoFrame for a clean look    
         self.big_clock = self.styled_label(48)

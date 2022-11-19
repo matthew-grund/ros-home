@@ -30,16 +30,16 @@ class QTLeftToolBar(qtw.QToolBar):
         super().__init__()
         self.q_main_window = q_main_window
         self.toolbar = qtw.QToolBar("Left toolbar")
-        self.toolbar.setIconSize(qtc.QSize(56,56))
+        self.toolbar.setIconSize(qtc.QSize(32,32))
         self.toolbar.setMovable(False)
         self.icon_path = "/data/home_ws/icons/"
         q_main_window.addToolBar(qtc.Qt.LeftToolBarArea,self.toolbar)
         
+        #self.add_toolbar_spacer()
+        self.add_orange_toolbar_button("home","overview","home_filled_96.png")  # these names correspond to frame names in central_widget.py
+        self.toolbar.addSeparator()
+        self.toolbar.addSeparator()
         self.add_toolbar_spacer()
-        self.add_orange_toolbar_button("home","overview","home_filled_96.png")
-        self.toolbar.addSeparator()
-        self.toolbar.addSeparator()
-        # self.add_toolbar_spacer()
         self.add_white_toolbar_button("people","view","group_96.png")
         self.toolbar.addSeparator()
         self.toolbar.addSeparator()
@@ -57,7 +57,7 @@ class QTLeftToolBar(qtw.QToolBar):
         self.add_white_toolbar_button("media","view","music_note_96.png")
         self.toolbar.addSeparator()
         self.toolbar.addSeparator()
-        # self.add_toolbar_spacer()
+        self.add_toolbar_spacer()
         self.add_white_toolbar_button("nodes","view","apps_96.png")
         self.toolbar.addSeparator()
         self.toolbar.addSeparator()
@@ -65,9 +65,9 @@ class QTLeftToolBar(qtw.QToolBar):
         self.add_white_toolbar_button("diagnostics","events","tune_96.png")
         self.toolbar.addSeparator()
         self.toolbar.addSeparator()
-        # self.add_toolbar_spacer()
-        self.add_white_toolbar_button("help","about","help_outline_96.png")
         self.add_toolbar_spacer()
+        self.add_white_toolbar_button("help","about","help_outline_96.png")
+        #self.add_toolbar_spacer()
         
     def add_toolbar_spacer(self):
         spacer = qtw.QWidget()
@@ -77,13 +77,13 @@ class QTLeftToolBar(qtw.QToolBar):
     def add_white_toolbar_button(self,menu_name,item_name,icon_file):
         i = self.white_icon(self.icon_path + icon_file)
         a = qtg.QAction(i, menu_name.title(), self)
-        a.triggered.connect(lambda : self.q_main_window.toolbar_callback(menu_name,item_name))
+        a.triggered.connect(lambda : self.toolbar_callback(menu_name,item_name))
         self.toolbar.addAction(a)
 
     def add_orange_toolbar_button(self,menu_name,item_name,icon_file):
         i = self.orange_icon(self.icon_path + icon_file)
         a = qtg.QAction(i, menu_name.title(), self)
-        a.triggered.connect(lambda : self.q_main_window.toolbar_callback(menu_name,item_name))
+        a.triggered.connect(lambda : self.toolbar_callback(menu_name,item_name))
         self.toolbar.addAction(a)
         
     def color_icon(self, filename, color):
