@@ -46,10 +46,12 @@ class RQTHomeUI(qtw.QMainWindow):
         self.screen = self.app.primaryScreen()
         self.screen_size =  self.screen.size()
         self.setWindowTitle(self.title)
-        self.resize(
-            int(self.screen_size.width()*0.75),
-            int(self.screen_size.height()*0.65)
-            )
+        self.resize(int(self.screen_size.width()*0.80),int(self.screen_size.height()*0.80))
+        
+        wingeo = self.frameGeometry()
+        center = self.screen.geometry().center()
+        wingeo.moveCenter(center)
+        self.move(wingeo.topLeft())
         
         self.last_wx_temp_deg_f = 99 
         self.stacked_frame_dict = {}   # a dict of categories - each is a list of frame names
@@ -101,8 +103,7 @@ class RQTHomeUI(qtw.QMainWindow):
         self.date_str = now.strftime("%A, %B %-d, %Y")
         self.big_clock.setText(self.clock_str)
         self.big_date.setText(self.date_str)
-        self.menu_clock.setText(self.clock_str)
-        self.clock_tick_timer.singleShot(999,self.ui_clock_timer_callback)
+        self.clock_tick_timer.singleShot(300,self.ui_clock_timer_callback)
     
     def check_for_ros_msgs(self):
         if self.lighting_msg_count < self.ros_node.lighting_msg_count:          # lighting msg
@@ -273,12 +274,6 @@ class RQTHomeUI(qtw.QMainWindow):
         print("Menu" + parent_name + ":" + action_name)
         self.statusBar().showMessage(parent_name + ":" + action_name)
         self.stack.setCurrentIndex(self.frame_dict[parent_name][action_name]['index'])
-                       
-    def toolbar_callback(self,parent_name, action_name):   
-        print("Toolbar" + parent_name + ":" + action_name)
-        self.statusBar().showMessage(parent_name + ":" + action_name)
-        self.stack.setCurrentIndex(self.frame_dict[parent_name][action_name]['index'])                   
-
 
     def setup_left_toolbar(self):
         self.left_toolbar = qt_left_toolbar.QTLeftToolBar(self)
@@ -386,8 +381,6 @@ class RQTHomeUI(qtw.QMainWindow):
            
     def setup_frame_lighting_view(self,panel):
         panel.title_label.setText("All Lights")
-
-
        
     def next_page(self):
         count = self.stack.count()

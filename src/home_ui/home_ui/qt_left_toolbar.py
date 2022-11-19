@@ -101,3 +101,8 @@ class QTLeftToolBar(qtw.QToolBar):
         
     def white_icon(self,filename):
         return self.color_icon(filename,"white")
+    
+    def toolbar_callback(self, parent_name, action_name):   
+        print("Toolbar: " + parent_name + ":" + action_name)
+        self.q_main_window.statusBar().showMessage(parent_name + ":" + action_name)
+        self.q_main_window.stacked_layout.setCurrentIndex(self.q_main_window.stacked_frame_indices[parent_name][action_name])   

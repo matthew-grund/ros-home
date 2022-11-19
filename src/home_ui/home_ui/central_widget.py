@@ -71,10 +71,15 @@ def configure(qt_main_window):
     qt_main_window.stacked_frame_dict["help"].append("getting started")
 
 def setup(qt_main_window):
+    index = 0
     qt_main_window.central_widget = qtw.QWidget()
     qt_main_window.stacked_layout = qtw.QStackedLayout()
+    qt_main_window.stacked_frame_indices = {}
     for group in qt_main_window.stacked_frame_dict:
+        qt_main_window.stacked_frame_indices[group] = {}
         for item in qt_main_window.stacked_frame_dict[group]:
+            qt_main_window.stacked_frame_indices[group][item] = index
+            index += 1
             frame = qtw.QFrame()
             frame_name = group + "_" + item + "_frame"
             frame.setObjectName(frame_name)
