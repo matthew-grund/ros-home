@@ -7,6 +7,8 @@
 # you may not use this file except in compliance with the License.
 #
 
+from . import central_widget
+
 import PySide6.QtGui as qtg
 
 def setup(rqt_main_window):
@@ -17,10 +19,10 @@ def setup(rqt_main_window):
     rqt_main_window.shorty_quit_q.activated.connect(rqt_main_window.app.quit)
         
     rqt_main_window.shorty_next_page = qtg.QShortcut(qtg.QKeySequence('Tab'), rqt_main_window)
-    rqt_main_window.shorty_next_page.activated.connect(rqt_main_window.next_page)
+    rqt_main_window.shorty_next_page.activated.connect(lambda: central_widget.next_page(rqt_main_window))
 
     rqt_main_window.shorty_prev_page = qtg.QShortcut(qtg.QKeySequence('Shift+Tab'), rqt_main_window)
-    rqt_main_window.shorty_prev_page.activated.connect(rqt_main_window.prev_page)
+    rqt_main_window.shorty_prev_page.activated.connect(lambda: central_widget.prev_page(rqt_main_window))
        
     rqt_main_window.shorty_home = qtg.QShortcut(qtg.QKeySequence('Home'), rqt_main_window)
     rqt_main_window.shorty_home.activated.connect(rqt_main_window.home_page)

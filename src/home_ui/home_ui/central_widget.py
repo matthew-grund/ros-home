@@ -74,6 +74,7 @@ def setup(qt_main_window):
     index = 0
     qt_main_window.central_widget = qtw.QWidget()
     qt_main_window.stacked_layout = qtw.QStackedLayout()
+    
     qt_main_window.stacked_frame_indices = {}
     for group in qt_main_window.stacked_frame_dict:
         qt_main_window.stacked_frame_indices[group] = {}
@@ -86,10 +87,36 @@ def setup(qt_main_window):
             frame.setAccessibleName(frame_name)
             frame.setFrameStyle(qt_main_window.frame_style)
             v_layout = qtw.QVBoxLayout()
-            title = qtw.QLabel()
+            title = styled_label(qt_main_window,24)
             title.setText(frame_name)
             v_layout.addWidget(title)
             frame.setLayout(v_layout)
-    qt_main_window.setLayout(qt_main_window.stacked_layout)
+            qt_main_window.stacked_layout.addWidget(frame)
+                   
+    qt_main_window.central_widget.setLayout(qt_main_window.stacked_layout)
+    qt_main_window.setCentralWidget(qt_main_window.central_widget)    
+
+def styled_label(qt_main_window,fontsize): 
+    styled_label = qtw.QLabel()
+    font = styled_label.font()
+    font.setPointSize(fontsize)
+    styled_label.setFont(font)    
+    styled_label.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter | qtc.Qt.AlignmentFlag.AlignVCenter)
+    styled_label.setFrameStyle(qt_main_window.frame_style)  
+    return styled_label  
         
-        
+def next_page(qt_main_window):
+    count = qt_main_window.stacked_layout.count()
+    current = qt_main_window.stacked_layout.currentIndex()   
+    current += 1
+    if current >= count:
+        current = 0
+    qt_main_window.stacked_layout.setCurrentIndex(current)  
+    
+def prev_page(qt_main_window):
+    count = qt_main_window.stacked_layout.count()
+    current = qt_main_window.stacked_layout.currentIndex()   
+    current -= 1
+    if current < 0:
+        current = count-1
+    qt_main_window.stacked_layout.setCurrentIndex(current)  

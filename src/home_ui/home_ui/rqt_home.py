@@ -383,24 +383,8 @@ class RQTHomeUI(qtw.QMainWindow):
         panel.title_label.setText("Restart ROS Home System?")
            
     def setup_frame_lighting_view(self,panel):
-        panel.title_label.setText("All Lights")
-       
-    def next_page(self):
-        count = self.stack.count()
-        current = self.stack.currentIndex()   
-        current += 1
-        if current >= count:
-            current = 0
-        self.stack.setCurrentIndex(current)   
+        panel.title_label.setText("All Lights") 
                 
-    def prev_page(self):
-        count = self.stack.count()
-        current = self.stack.currentIndex()   
-        current -= 1
-        if current < 0:
-            current = count-1
-        self.stack.setCurrentIndex(current)    
-        
     def home_page(self):
         self.stack.setCurrentIndex(0)   
         
