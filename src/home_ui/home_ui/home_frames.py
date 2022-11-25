@@ -13,7 +13,6 @@ import PySide6.QtCore as qtc
 import PySide6.QtGui as qtg
 
 def create_home_overview_frame(qt_main_window):
-    print("in create_home_overview function")
     frame = qtw.QFrame()
     frame_name = "create_home_overview_frame (create)"
     frame.setObjectName(frame_name)
@@ -24,8 +23,8 @@ def create_home_overview_frame(qt_main_window):
     title.setText(frame_name)
     v_layout.addWidget(title)
     frame.setLayout(v_layout)
-    
     return frame
+
 
 def styled_label(qt_main_window,fontsize): 
     styled_label = qtw.QLabel()

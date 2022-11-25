@@ -10,12 +10,13 @@
 import PySide6.QtWidgets as qtw
 import PySide6.QtCore as qtc
 import PySide6.QtGui as qtg
+
+import rqt_home_widgets as rhw
 class QTLeftToolBar(qtw.QToolBar):
 
     def __init__(self, q_main_window):
         super().__init__()
         self.q_main_window = q_main_window
-
         self.setIconSize(qtc.QSize(32,32))
         self.setMovable(False)
         self.icon_path = "/data/home_ws/icons/"
@@ -50,8 +51,7 @@ class QTLeftToolBar(qtw.QToolBar):
         self.add_toolbar_spacer()
         
     def add_toolbar_spacer(self):
-        spacer = qtw.QWidget()
-        spacer.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
+        spacer = rhw.styled_spacer(self.q_main_window)
         self.addWidget(spacer)
         
     def add_normal_toolbar_button(self,group_name,item_name,icon_file):
