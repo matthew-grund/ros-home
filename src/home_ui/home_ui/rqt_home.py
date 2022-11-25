@@ -48,15 +48,6 @@ class RQTHomeUI(qtw.QMainWindow):
         self.setWindowTitle(self.title)
         self.resize(int(self.screen_size.width()*0.80),int(self.screen_size.height()*0.80))
         
-        wingeo = self.frameGeometry()
-        print(wingeo)
-        center = self.screen.geometry().center()
-        print(center)
-        wingeo.moveCenter(center)
-        print(wingeo)
-        self.move(wingeo.topLeft())
-        print(self.frameGeometry())
-        
         self.last_wx_temp_deg_f = 99 
         self.stacked_frame_dict = {}   # a dict of categories - each is a list of frame names
         self.last_art_url = ""
@@ -76,7 +67,7 @@ class RQTHomeUI(qtw.QMainWindow):
         self.setup_left_toolbar()
         keyboard_shortcuts.setup(self)
         
-        # sho thwe version, to start
+        # show the version, to start
         self.statusBar().showMessage(self.title + "      ver:" + self.version_str + "       " + self.copyright_str)
         
         self.ros_node = ui_node.ROSHomeUINode()
@@ -85,6 +76,10 @@ class RQTHomeUI(qtw.QMainWindow):
         self.ros_spin_count = 0
         self.clock_tick_timer = qtc.QTimer()
         self.clock_tick_timer.singleShot(200,self.ui_clock_timer_callback)
+        
+        self.show()
+        
+
         
     def ros_timer_callback(self):
         # do ros stuff, then check for ros results

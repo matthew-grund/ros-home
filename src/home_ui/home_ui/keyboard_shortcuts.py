@@ -21,7 +21,7 @@ def setup(rqt_main_window):
     rqt_main_window.shorty_next_page = qtg.QShortcut(qtg.QKeySequence('Tab'), rqt_main_window)
     rqt_main_window.shorty_next_page.activated.connect(lambda: central_widget.next_page(rqt_main_window))
 
-    rqt_main_window.shorty_prev_page = qtg.QShortcut(qtg.QKeySequence('Shift+Tab'), rqt_main_window)
+    rqt_main_window.shorty_prev_page = qtg.QShortcut(qtg.QKeySequence('Backspace'), rqt_main_window)
     rqt_main_window.shorty_prev_page.activated.connect(lambda: central_widget.prev_page(rqt_main_window))
        
     rqt_main_window.shorty_home = qtg.QShortcut(qtg.QKeySequence('Home'), rqt_main_window)
@@ -29,3 +29,4 @@ def setup(rqt_main_window):
 
     rqt_main_window.shorty_full = qtg.QShortcut(qtg.QKeySequence('Esc'), rqt_main_window)
     rqt_main_window.shorty_full.activated.connect(rqt_main_window.max_min)
+    

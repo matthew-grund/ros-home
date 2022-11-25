@@ -12,6 +12,15 @@ import PySide6.QtWidgets as qtw
 import PySide6.QtCore as qtc
 import PySide6.QtGui as qtg
 
+from . import home_frames
+from . import people_frames
+from . import lighting_frames
+from . import temperature_frames
+from . import security_frames
+from . import media_frames
+from . import nodes_frames
+from . import diagnostics_frames
+
 def configure(qt_main_window):
     # every stacked frame in the central widget
     qt_main_window.stacked_frame_dict = {}   # a dict of lists of frames. item [0] of each frame list is attached to the tool bar button
@@ -53,7 +62,7 @@ def configure(qt_main_window):
     qt_main_window.stacked_frame_dict["nodes"] = []
     qt_main_window.stacked_frame_dict["nodes"].append("view")
     qt_main_window.stacked_frame_dict["nodes"].append("messages")
-    qt_main_window.stacked_frame_dict["nodes"].append("run...")        
+    qt_main_window.stacked_frame_dict["nodes"].append("run")        
     # devices
     qt_main_window.stacked_frame_dict["devices"] = []
     qt_main_window.stacked_frame_dict["devices"].append("view")
@@ -81,20 +90,34 @@ def setup(qt_main_window):
         for item in qt_main_window.stacked_frame_dict[group]:
             qt_main_window.stacked_frame_indices[group][item] = index
             index += 1
-            frame = qtw.QFrame()
-            frame_name = group + "_" + item + "_frame"
-            frame.setObjectName(frame_name)
-            frame.setAccessibleName(frame_name)
-            frame.setFrameStyle(qt_main_window.frame_style)
-            v_layout = qtw.QVBoxLayout()
-            title = styled_label(qt_main_window,24)
-            title.setText(frame_name)
-            v_layout.addWidget(title)
-            frame.setLayout(v_layout)
+            namespace = globals()
+            module_name = group + "_frames"
+            if module_name in namespace:
+                method_name = "create_" + group + "_" + item + "_frame"
+                module_obj = namespace[module_name]
+                if hasattr(module_obj,method_name) and callable(getattr(module_obj,method_name)):
+                    create = getattr(module_obj,method_name)
+                    frame = create(qt_main_window)
+                else:    
+                    frame = placeholder_frame(qt_main_window,group,item)
+            else:
+                frame = placeholder_frame(qt_main_window,group,item)
             qt_main_window.stacked_layout.addWidget(frame)
-                   
     qt_main_window.central_widget.setLayout(qt_main_window.stacked_layout)
     qt_main_window.setCentralWidget(qt_main_window.central_widget)    
+
+def placeholder_frame(qt_main_window,group,item):
+    frame = qtw.QFrame()
+    frame_name = group + "_" + item + "_frame"
+    frame.setObjectName(frame_name)
+    frame.setAccessibleName(frame_name)
+    frame.setFrameStyle(qt_main_window.frame_style)
+    v_layout = qtw.QVBoxLayout()
+    title = styled_label(qt_main_window,24)
+    title.setText(frame_name)
+    v_layout.addWidget(title)
+    frame.setLayout(v_layout)
+    return frame
 
 def styled_label(qt_main_window,fontsize): 
     styled_label = qtw.QLabel()
