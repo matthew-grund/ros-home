@@ -17,14 +17,12 @@ def styled_frame(qt_main_window, name):
     styled_frame.setObjectName(name)
     styled_frame.setAccessibleName(name)
     styled_frame.setFrameStyle(qt_main_window.frame_style)
-    styled_frame.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter | qtc.Qt.AlignmentFlag.AlignVCenter)
     return styled_frame
 
 def styled_spacer(qt_main_window):
-    spacer = qtw.QWidget()
+    spacer = qtw.QFrame()
     spacer.setFrameStyle(qt_main_window.frame_style)  
     spacer.setSizePolicy(qtw.QSizePolicy.Expanding, qtw.QSizePolicy.Expanding)
-    spacer.setAlignment(qtc.Qt.AlignmentFlag.AlignCenter | qtc.Qt.AlignmentFlag.AlignVCenter)
 
 def styled_label(qt_main_window, text, fontsize): 
     styled_label = qtw.QLabel()

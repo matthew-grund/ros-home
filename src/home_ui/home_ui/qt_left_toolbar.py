@@ -11,7 +11,7 @@ import PySide6.QtWidgets as qtw
 import PySide6.QtCore as qtc
 import PySide6.QtGui as qtg
 
-import rqt_home_widgets as rhw
+from . import rqt_home_widgets as rhw
 class QTLeftToolBar(qtw.QToolBar):
 
     def __init__(self, q_main_window):
@@ -95,8 +95,8 @@ class QTLeftToolBar(qtw.QToolBar):
         self.q_main_window.stacked_layout.setCurrentIndex(self.q_main_window.stacked_frame_indices[group_name][item_name]) 
     
     def select_button(self, group_name, item_name):
-        self.colorize_button(group_name,item_name,self.active_button_color)
         self.colorize_button(self.current_active_button_group, self.current_active_button_item, self.normal_button_color)
+        self.colorize_button(group_name,item_name,self.active_button_color)
         self.current_active_button_group = group_name
         self.current_active_button_item = item_name  
           
