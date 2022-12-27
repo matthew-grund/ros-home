@@ -79,8 +79,6 @@ class RQTHomeUI(qtw.QMainWindow):
         
         self.show()
         
-
-        
     def ros_timer_callback(self):
         # do ros stuff, then check for ros results
         self.lighting_msg_count = self.ros_node.lighting_msg_count
@@ -107,21 +105,27 @@ class RQTHomeUI(qtw.QMainWindow):
         if self.lighting_msg_count < self.ros_node.lighting_msg_count:          # lighting msg
             self.lighting_msg_count = self.ros_node.lighting_msg_count
             self.ui_parse_lighting_msg(self.ros_node.latest_lighting_msg)
+            
         if self.event_msg_count < self.ros_node.event_msg_count:                # event msg
             self.event_msg_count = self.ros_node.event_msg_count
             self.ui_parse_event_msg(self.ros_node.latest_event_msg)
+            
         if self.conditions_msg_count < self.ros_node.conditions_msg_count:      # weather conditions msg
             self.conditions_msg_count = self.ros_node.conditions_msg_count
-            self.ui_parse_conditions_msg(self.ros_node.latest_conditions_msg)    
+            self.ui_parse_conditions_msg(self.ros_node.latest_conditions_msg)
+                
         if self.devices_msg_count < self.ros_node.devices_msg_count:            # known devices msg
             self.devices_msg_count = self.ros_node.devices_msg_count
-            self.ui_parse_devices_msg(self.ros_node.latest_devices_msg)    
+            self.ui_parse_devices_msg(self.ros_node.latest_devices_msg)
+                
         if self.nodes_msg_count < self.ros_node.nodes_msg_count:                # nodes msg
             self.nodes_msg_count = self.ros_node.nodes_msg_count
-            self.ui_parse_nodes_msg(self.ros_node.latest_nodes_msg)    
+            self.ui_parse_nodes_msg(self.ros_node.latest_nodes_msg)
+                
         if self.scene_msg_count < self.ros_node.scene_msg_count:                # lighting scenes msg
             self.scene_msg_count = self.ros_node.scene_msg_count
-            self.ui_parse_scene_msg(self.ros_node.latest_scene_msg) 
+            self.ui_parse_scene_msg(self.ros_node.latest_scene_msg)
+             
         if self.media_msg_count < self.ros_node.media_msg_count:                # media msg  
             self.media_msg_count = self.ros_node.media_msg_count
             self.ui_parse_media_msg(self.ros_node.latest_media_msg) 
@@ -194,29 +198,30 @@ class RQTHomeUI(qtw.QMainWindow):
         self.nodes_summary_label.setText(f"{ts}   ROS Home: {num_nodes} ROS nodes currently running. (max is {self.max_nodes_running} nodes running).")
     
     def ui_parse_media_msg(self,msg):
+        # self.statusBar().showMessage(f"Got renderer status from {msg['payload']['name']} ({msg['payload']['vendor']} {msg['payload']['type']})")
         self.update_media_renderer_dict(msg)
         if self.best_renderer['status']['power'] == 'on': 
                 art_url = self.best_renderer['play']['albumart_url']
-                if self.last_art_url != art_url:
-                    if len(art_url):
-                        # print(art_url)
-                        self.last_art_url = art_url
-                        full_url = "http://" + self.best_renderer['ip'] + art_url
-                        data = urllib.request.urlopen(full_url).read()
-                        image = qtg.QImage()
-                        image.loadFromData(data)
-                        scaled_image = image.scaledToWidth(self.overview_icon_width)
-                        self.album_art_label.setPixmap(qtg.QPixmap(scaled_image))
-                        song = self.best_renderer['play']['track']
-                        if len(song) > 25:
-                            song = song[:23] +'...'       
-                        self.playback_song_label.setText(song)
-                        album = self.best_renderer['play']['album']
-                        if len(album) > 35:
-                            album = album[:33] +'...'
-                        self.playback_album_label.setText(album)
-                        self.playback_artist_label.setText(self.best_renderer['play']['artist'])
-                    else: 
+                if len(art_url):
+                    # print(art_url)
+                    self.last_art_url = art_url
+                    full_url = "http://" + self.best_renderer['ip'] + art_url
+                    data = urllib.request.urlopen(full_url).read()
+                    image = qtg.QImage()
+                    image.loadFromData(data)
+                    scaled_image = image.scaledToWidth(self.overview_icon_width)
+                    self.album_art_label.setPixmap(qtg.QPixmap(scaled_image))
+                    song = self.best_renderer['play']['track']
+                    if len(song) > 27:
+                        song = song[:25] +'...'       
+                    self.playback_song_label.setText(song)
+                    album = self.best_renderer['play']['album']
+                    if len(album) > 36:
+                        album = album[:34] +'...'
+                    self.playback_album_label.setText(album)
+                    self.playback_artist_label.setText(self.best_renderer['play']['artist'])
+                else: 
+                        print("no  album art for ")
                         self.last_art_url = ""   
                         self.playback_song_label.setText(self.best_renderer['name'] + ' ON')
                         self.playback_album_label.setText('input is '+self.best_renderer['status']['input'])

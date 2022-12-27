@@ -17,7 +17,8 @@ class QTLeftToolBar(qtw.QToolBar):
     def __init__(self, q_main_window):
         super().__init__()
         self.q_main_window = q_main_window
-        self.setIconSize(qtc.QSize(32,32))
+        self.setIconSize(qtc.QSize(48,48))
+        self.setMinimumWidth(96)
         self.setMovable(False)
         self.icon_path = "/data/home_ws/icons/"
         q_main_window.addToolBar(qtc.Qt.LeftToolBarArea,self)
@@ -28,26 +29,25 @@ class QTLeftToolBar(qtw.QToolBar):
         self.action_dict = {}
     
         # layout the buttons in the toolbar    
-        self.add_toolbar_spacer()
+        # self.add_toolbar_spacer()
         self.add_toolbar_spacer()
         self.add_active_toolbar_button("home","overview","home_filled_96.png")  # these names correspond to frame names in central_widget.py
         self.add_toolbar_spacer()
         self.add_normal_toolbar_button("people","view","group_96.png")
         self.add_toolbar_spacer()
         self.add_normal_toolbar_button("lighting","view","lightbulb_96.png")
-        self.add_toolbar_spacer()
+        #self.add_toolbar_spacer()
         self.add_normal_toolbar_button("temperature","view","thermostat_96.png")
-        self.add_toolbar_spacer()
+        #self.add_toolbar_spacer()
         self.add_normal_toolbar_button("security","view","security_96.png")
-        self.add_toolbar_spacer()
+        #self.add_toolbar_spacer()
         self.add_normal_toolbar_button("media","view","music_note_96.png")
         self.add_toolbar_spacer()
         self.add_normal_toolbar_button("nodes","view","apps_96.png")
-        self.add_toolbar_spacer()
+        # self.add_toolbar_spacer()
         self.add_normal_toolbar_button("diagnostics","events","tune_96.png")
         self.add_toolbar_spacer()
         self.add_normal_toolbar_button("help","about","help_outline_96.png")
-        self.add_toolbar_spacer()
         self.add_toolbar_spacer()
         
     def add_toolbar_spacer(self):

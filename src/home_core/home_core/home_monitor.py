@@ -48,12 +48,15 @@ class HomeObserver(Node):
         pids = psutil.pids()
         for pid in pids:
             if psutil.pid_exists(pid):
-                p = psutil.Process(pid)
-                p_dict = p.as_dict()
-                p_cl_py = p_dict['cmdline']
-                if "home_ws/install/home_" in str(p_cl_py):
-                    # self.get_logger().info(f"node %s[%d] => %s" % (p.name(), pid, str(p_cl_py))) 
-                    self.current_nodes[p.name() + '['+ str(pid) + ']' ] = p_cl_py.append(p_dict['status'])
+                try:
+                    p = psutil.Process(pid)
+                    p_dict = p.as_dict()
+                    p_cl_py = p_dict['cmdline']
+                    if "home_ws/install/home_" in str(p_cl_py):
+                        # self.get_logger().info(f"node %s[%d] => %s" % (p.name(), pid, str(p_cl_py))) 
+                        self.current_nodes[p.name() + '['+ str(pid) + ']' ] = p_cl_py.append(p_dict['status'])
+                except:
+                    self.get_logger().info(f"Process  inspection stumbled on pid %s" % pid)      
         self.get_logger().info(f"Monitor: %d ROS HOME nodes running." % len(self.current_nodes))
         msg = Int32()
         msg.data = len(self.current_nodes)
