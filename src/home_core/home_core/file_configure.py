@@ -20,31 +20,37 @@ class HomeConfigurator(Node):
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
         self.i = 0
         self.files = {}
+        self.get_logger().info(f"Config watching folder '{self.root_folder}' for INI files")
+
 
     def timer_callback(self):
         ls = os.listdir(self.root_folder)
         for f in ls:
-            if f.endswith(".ini") or f.endswith(".INI"):
-                is_new = True
-                is_updated = False
-                fpath = self.root_folder + "/" +  f
-                for fname in self.files:
-                    if fname == f:
-                        is_new = False
-                mt = os.path.getmtime(fpath)
-                if not is_new:
-                    if self.files[f] < mt:
-                        is_updated = True
-                if is_new or is_updated:
-                    settings = self.load_ini_file(fpath)
-                    self.files[f] = mt
-                    settings['filepath'] = fpath
-                    settings['type'] =  (f.rsplit('.',1)[0]).upper()   
-                    self.send_settings_msg(settings)
+            if (not f.startswith(".#") and (not f.startswith("~"))):
+                if f.endswith(".ini") or f.endswith(".INI"):
+                    is_new = True
+                    is_updated = False
+                    fpath = self.root_folder + "/" +  f
+                    for fname in self.files:
+                        if fname == f:
+                            is_new = False
+                    mt = os.path.getmtime(fpath)
+                    if not is_new:
+                        if self.files[f] < mt:
+                            is_updated = True
+                    if is_new or is_updated:
+                        self.get_logger().info(f"Config found INI file '{f}' (new or updated)")
+                        settings = self.load_ini_file(fpath)
+                        self.files[f] = mt
+                        settings['filepath'] = fpath
+                        settings['type'] =  (f.rsplit('.',1)[0]).upper()   
+                        self.send_settings_msg(settings)
+
 
     def load_ini_file(self,filepath):
         settings = configobj.ConfigObj(filepath)
         return settings
+
 
     def send_settings_msg(self,settings):
         m = {}

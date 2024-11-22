@@ -50,7 +50,9 @@ class LutronDevice(Node):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
         
-    #  LUTRON.INI: {"index": 8, 
+    #  LUTRON.INI: 
+    # 
+    #  Message: {"index": 8, 
     #               "interval": 0.5, 
     #               "payload": {"filepath": "/data/home_ws/config/lutron.ini", 
     #                           "type": "LUTRON", 
@@ -58,6 +60,17 @@ class LutronDevice(Node):
     #                           "Key": {"filepath": "/data/home_ws/aux/10.0.0.180.key"}, 
     #                           "Certificate": {"filepath": "/data/home_ws/aux/10.0.0.180.cert"}, 
     #                           "Bridge Certificate": {"filepath": "/data/home_ws/aux/10.0.0.180-bridge.crt"}}}
+    # File:
+    #
+    #  [Bridge]
+    #  address=10.0.1.128
+    #  [Certificate]
+    #  filepath=/data/home_ws/config/10.0.1.128.crt
+    #  [Key]
+    #  filepath=/data/home_ws/config/10.0.1.128.key
+    #  [Bridge Certificate]
+    #  filepath=/data/home_ws/config/10.0.1.128-bridge.crt
+    #
     def config_callback(self,msg):
         msg = json.loads(msg.data)
         if msg['payload']['type'] == "LUTRON":
