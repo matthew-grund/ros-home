@@ -12,6 +12,7 @@ import json
 from dateutil import parser
 import math
 import pytz
+
 class HomeScheduler(Node):
     # The home_scheduler node takes configuration from the "settings" topic.
     # it relies on the config node to publish data from the file "schedule.ini"

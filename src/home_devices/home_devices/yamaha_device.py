@@ -13,7 +13,9 @@ import json
 import requests
 
 class YamahaDevice(Node):
-
+    #
+    #  single instance tracks multiple yamaha amplifiers
+    #
     def __init__(self):
         super().__init__('yamaha_device')
         self.publisher_status = self.create_publisher(String, '/media/status', 10)
@@ -21,7 +23,8 @@ class YamahaDevice(Node):
         self.poll_timer = self.create_timer(self.poll_timer_period, self.poll_timer_callback)
         self.i = 0
         self.do_need_device_msg = True
-        self.yamaha_devices = {}  #  dict with IP keys
+        self.do_need_config_msg = True
+        self.yamaha_devices = {}  #  dict with IP address information
 
         self.config_sub = self.create_subscription(
             String, '/home/configuration',
@@ -41,10 +44,13 @@ class YamahaDevice(Node):
 
     
     def poll_timer_callback(self):
-        if self.do_need_device_msg:
+        # we don't have any configuration updates yet
+        if self.do_need_device_msg and self.do_need_config_msg:
             return
+        # we don't know of any yamaha IP addresses
         if len(self.yamaha_devices) == 0:
             return
+        # get to here, we've got amps
         for ip in self.yamaha_devices:
             base_url = f"http://{ip}/YamahaExtendedControl/"
             # status
@@ -67,7 +73,7 @@ class YamahaDevice(Node):
                 if ret.status_code == 200:      # success!
                     play = json.loads(ret.text)
                     self.yamaha_devices[ip]['play'] = play
-                    self.get_logger().info(f"Yamaha: got play info for {self.yamaha_devices[ip]['name']}: {play['input']}::{play['track']}:::{play['playback']} ") 
+                    self.get_logger().info(f"Yamaha: got playback info for {self.yamaha_devices[ip]['name']}: {play['input']}::{play['track']}:::{play['playback']} ") 
             else:
                 self.yamaha_devices[ip]['play'] = {}
                 
@@ -85,7 +91,23 @@ class YamahaDevice(Node):
             self.get_logger().info(f"Yamaha publishing update for {self.yamaha_devices[ip]['name']}")
             self.i += 1
         
+        
     def config_callback(self,msg):
+        # parse a home configuration message
+        msg = json.loads(msg.data)
+        if msg['payload']['type'] == "YAMAHA":
+            self.do_need_config_msg = False
+            payload = msg['payload']
+            for section in payload:
+                if self.is_ip_address(section):
+                    # not a new address
+                    if section in self.yamaha_devices:
+                        self.get_logger().warning(f"Yamaha got config for existing address '{section}' not adding")
+                        return
+                    # get to here it's a new amp address
+                    self.yamaha_devices[section]=payload[section]
+                    self.get_logger().info(f"Yamaha got config for address '{section}' name={payload[section]['name']}")
+            self.do_need_config_msg = False 
         return 
        
     def command_callback(self,msg):
@@ -95,6 +117,9 @@ class YamahaDevice(Node):
         return 
     
     def devices_callback(self,msg):
+        #
+        #   Parses a network devices message, typically written to /devices/known/network by net_discover.py
+        #
         m = json.loads(msg.data)
         self.do_need_device_msg = False
         devices = m['payload']
@@ -103,6 +128,16 @@ class YamahaDevice(Node):
                 if dev['ip'] not in self.yamaha_devices:
                     self.yamaha_devices[dev['ip']] = dev
                     self.get_logger().info(f"Yamaha: new device {dev['name']} found. ip = {dev['ip']}")
+
+
+    def is_ip_address(self,addr:String):
+        toks = addr.split(".")
+        if len(toks) is not 4:
+            return False
+        for tok in toks:
+            if tok.isnumeric() is False:
+                return False
+        return True
 
           
 def main(args=None):
