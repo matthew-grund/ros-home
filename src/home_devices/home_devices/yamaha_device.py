@@ -91,7 +91,7 @@ class YamahaDevice(Node):
             msg = String()
             msg.data = mstr
             self.publisher_status.publish(msg)
-            self.get_logger().info(f"Yamaha publishing update for {self.yamaha_devices[ip]['room']}")
+            self.get_logger().info(f"Yamaha: publishing update for {self.yamaha_devices[ip]['room']}")
             # self.get_logger().info(f"Yamaha publishing update for {ip}")
             self.i += 1
         
@@ -102,20 +102,20 @@ class YamahaDevice(Node):
         if msg['payload']['type'] == "YAMAHA":
             self.do_need_config_msg = False
             payload = msg['payload']
-            self.get_logger().info(f"Yamaha got config message type YAMAHA {msg}")
+            self.get_logger().info(f"Yamaha: got config message type YAMAHA {msg}")
             for section in payload:
                 if self.is_ip_address(section):
                     # not a new address
                     if section in self.yamaha_devices:
-                        self.get_logger().warning(f"Yamaha got config for existing address '{section}' not adding")
+                        self.get_logger().warning(f"Yamaha: got config for existing address '{section}' not adding")
                         return
                     # get to here it's a new amp address
                     self.yamaha_devices[section]=payload[section]
-                    self.get_logger().info(f"Yamaha got config for address '{section}' = {payload[section]}")
+                    self.get_logger().info(f"Yamaha: got config for address '{section}' = {payload[section]}")
                 else:
-                    self.get_logger().warning(f"Yamaha found config section '{section}' - ignoring")
+                    self.get_logger().warning(f"Yamaha: found config section '{section}' - ignoring")
         else:
-            self.get_logger().warning(f"Yamaha got config for {msg['payload']['type']}' - ignoring")    
+            self.get_logger().warning(f"Yamaha: got config for {msg['payload']['type']}' - ignoring")    
         return 
        
     def command_callback(self,msg):
