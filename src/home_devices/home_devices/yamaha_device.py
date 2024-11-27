@@ -3,12 +3,10 @@
 #  Licensed under the BSD 2 Clause license;
 #  you may not use this file except in compliance with the License.
 #
-from telnetlib import STATUS
+# from telnetlib import STATUS
 import rclpy
 from rclpy.node import Node
-
 from std_msgs.msg import String
-
 import json
 import requests
 
@@ -27,8 +25,11 @@ class YamahaDevice(Node):
         self.yamaha_devices = {}  #  dict with IP address information
 
         self.config_sub = self.create_subscription(
-            String, '/home/configuration',
-            self.config_callback,10)
+            String,
+            '/home/configuration',
+            self.config_callback,
+            10)
+        self.config_sub  # prevent unused variable warning
 
         self.command_sub = self.create_subscription(
             String,'/media/commands',
@@ -62,7 +63,8 @@ class YamahaDevice(Node):
             if ret.status_code == 200:      # success! 
                 status = json.loads(ret.text)
                 self.yamaha_devices[ip]['status'] = status
-                self.get_logger().info(f"Yamaha: got status for {self.yamaha_devices[ip]['name']}: power:{status['power']} volume:{status['actual_volume']['value']} dB") 
+                self.get_logger().info(f"Yamaha: got status for {self.yamaha_devices[ip]['room']}: status:{status['power']} volume:{status['actual_volume']['value']} dB")
+                # self.get_logger().info(f"Yamaha: got status for {ip}: {status}")  
             if status['power'] == 'on':     
                 # play info
                 get_play_url = base_url + "v1/netusb/getPlayInfo"
@@ -73,7 +75,8 @@ class YamahaDevice(Node):
                 if ret.status_code == 200:      # success!
                     play = json.loads(ret.text)
                     self.yamaha_devices[ip]['play'] = play
-                    self.get_logger().info(f"Yamaha: got playback info for {self.yamaha_devices[ip]['name']}: {play['input']}::{play['track']}:::{play['playback']} ") 
+                    self.get_logger().info(f"Yamaha: got playback info for {self.yamaha_devices[ip]['room']}: {play['input']}::{play['track']}::{play['playback']} ") 
+                    # self.get_logger().info(f"Yamaha: got playback info for {ip}: {play['input']}::{play['track']}:::{play['playback']} ") 
             else:
                 self.yamaha_devices[ip]['play'] = {}
                 
@@ -88,16 +91,18 @@ class YamahaDevice(Node):
             msg = String()
             msg.data = mstr
             self.publisher_status.publish(msg)
-            self.get_logger().info(f"Yamaha publishing update for {self.yamaha_devices[ip]['name']}")
+            self.get_logger().info(f"Yamaha publishing update for {self.yamaha_devices[ip]['room']}")
+            # self.get_logger().info(f"Yamaha publishing update for {ip}")
             self.i += 1
         
-        
+
     def config_callback(self,msg):
         # parse a home configuration message
         msg = json.loads(msg.data)
         if msg['payload']['type'] == "YAMAHA":
             self.do_need_config_msg = False
             payload = msg['payload']
+            self.get_logger().info(f"Yamaha got config message type YAMAHA {msg}")
             for section in payload:
                 if self.is_ip_address(section):
                     # not a new address
@@ -106,8 +111,11 @@ class YamahaDevice(Node):
                         return
                     # get to here it's a new amp address
                     self.yamaha_devices[section]=payload[section]
-                    self.get_logger().info(f"Yamaha got config for address '{section}' name={payload[section]['name']}")
-            self.do_need_config_msg = False 
+                    self.get_logger().info(f"Yamaha got config for address '{section}' = {payload[section]}")
+                else:
+                    self.get_logger().warning(f"Yamaha found config section '{section}' - ignoring")
+        else:
+            self.get_logger().warning(f"Yamaha got config for {msg['payload']['type']}' - ignoring")    
         return 
        
     def command_callback(self,msg):
@@ -132,7 +140,7 @@ class YamahaDevice(Node):
 
     def is_ip_address(self,addr:String):
         toks = addr.split(".")
-        if len(toks) is not 4:
+        if len(toks) != 4:
             return False
         for tok in toks:
             if tok.isnumeric() is False:
