@@ -23,24 +23,12 @@ class HomeObserver(Node):
         self.publisher_nodes = self.create_publisher(Int32, '/nodes/num_running', 10)
         self.publisher_node_list = self.create_publisher(String,'/nodes/list',10)
         self.node_list_iter = 0
-        self.ps_timer_period = 10  # seconds
+        self.ps_timer_period =  1.0 # seconds
         self.ps_timer = self.create_timer(self.ps_timer_period, self.ps_timer_callback)
         self.current_nodes = {}
         self.known_nodes = {}
-        
-        # subscribe to curent conditions
-        self.wx_cond_sub = self.create_subscription(
-            String,
-            '/environment/weather/conditions',
-            self.wx_cond_callback,
-            10)
-        self.wx_cond_sub  # prevent unused variable warning
+        self.prev_num_nodes = 0
 
-    def wx_cond_callback(self, msg):
-        m = json.loads(msg.data)
-        wx = m['payload']
-        temp = wx
-        self.get_logger().info('I heard: "%s"' % msg.data)
 
     def ps_timer_callback(self):
         # check all running processes for ROS  HOME  processes
@@ -50,14 +38,23 @@ class HomeObserver(Node):
             if psutil.pid_exists(pid):
                 try:
                     p = psutil.Process(pid)
-                    p_dict = p.as_dict()
-                    p_cl_py = p_dict['cmdline']
-                    if "home_" in str(p_cl_py):
-                        # self.get_logger().info(f"node %s[%d] => %s" % (p.name(), pid, str(p_cl_py))) 
-                        self.current_nodes[p.name() + '['+ str(pid) + ']' ] = p_cl_py.append(p_dict['status'])
                 except:
-                    self.get_logger().info(f"Process inspection stumbled on pid %s" % pid)      
-        self.get_logger().info(f"Monitor: %d ROS HOME nodes running." % len(self.current_nodes))
+                    self.get_logger().info(f"Process inspection stumbled on pid %s" % pid)
+                else:          
+                    p_dict = p.as_dict()
+                    p_args = p_dict['cmdline']
+                    # print(f"{p.name()} {len(p_args)}::'{p_args}'")
+                    if p_args is not None:
+                        if len(p_args) == 3:
+                            # print(f"{p.name()} {len(p_args)}::'{p_args}'")
+                            if ("ros-args" in p_args[2]):
+                                # print(f"{p.name()} {len(p_args)}::'{p_args}'")
+                                # self.get_logger().info(f"node %s[%d] => %s" % (p.name(), pid, str(p_cl_py))) 
+                                self.current_nodes[str(pid)] = { 'name':p.name(),'pid':pid, 'status':p.status(), 'cpu':p.cpu_percent(),
+                                                                'mem':p.memory_percent(),'args': p_args }
+        if self.node_list_iter % 10 == 0:
+            self.get_logger().info(f"Monitor: {len(self.current_nodes)} ROS HOME nodes running. [{self.node_list_iter}]")
+        self.node_list_iter += 1
         msg = Int32()
         msg.data = len(self.current_nodes)
         self.publisher_nodes.publish(msg)     # a number, for plotting, etc.
@@ -68,13 +65,15 @@ class HomeObserver(Node):
         m['payload'] = self.current_nodes
         msg.data = json.dumps(m)
         self.publisher_node_list.publish(msg) # a JSON string    
-                
+        # print(self.current_nodes)
+
+
 def main(args=None):
     rclpy.init(args=args)
 
     home_observer = HomeObserver()
 
-    rclpy.spin(home_observer)
+    rclpy.spin(home_observer) # blocks
 
     home_observer.destroy_node()
     rclpy.shutdown()
