@@ -19,15 +19,14 @@ class HomeObserver(Node):
         self.wx_wind_speed_kph = []
         self.wx_wind_dir_from_degrees = []
         self.wx_humidity_percent = []
-                
+        self.current_nodes = {}
+        self.known_nodes = {}
+        self.prev_num_nodes = 0     
         self.publisher_nodes = self.create_publisher(Int32, '/nodes/num_running', 10)
-        self.publisher_node_list = self.create_publisher(String,'/nodes/list',10)
+        self.publisher_node_list = self.create_publisher(String,'/nodes/list', 10)
         self.node_list_iter = 0
         self.ps_timer_period =  1.0 # seconds
         self.ps_timer = self.create_timer(self.ps_timer_period, self.ps_timer_callback)
-        self.current_nodes = {}
-        self.known_nodes = {}
-        self.prev_num_nodes = 0
 
 
     def ps_timer_callback(self):
@@ -40,6 +39,7 @@ class HomeObserver(Node):
                     p = psutil.Process(pid)
                 except:
                     self.get_logger().info(f"Process inspection stumbled on pid %s" % pid)
+                    return
                 else:          
                     p_dict = p.as_dict()
                     p_args = p_dict['cmdline']
