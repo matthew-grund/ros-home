@@ -83,7 +83,6 @@ class EventDetector(Node):
             10)
         self.subscription_lighting_status # prevent unused variable warning
 
-
         self.publisher_events = self.create_publisher(String, '/diagnostics/events', 10)
         self.period_name = ""
         self.timer_period = 10.0  # seconds
@@ -97,10 +96,12 @@ class EventDetector(Node):
         self.wx_recent_forecasts = {}
         self.lights = []
         self.num_lights_on = -1
-        
+
+
     def timer_callback(self):
         self.i += 1
-    
+
+
     def publish_event(self, typename, severity, desc, detail):
         msg = String()
         event = {}
@@ -123,6 +124,7 @@ class EventDetector(Node):
             self.get_logger().info(desc)
         self.event_index += 1    
 
+
     def publish_known_devices(self):
         msg = String()
         msgdict = {}
@@ -133,6 +135,7 @@ class EventDetector(Node):
         self.publisher_devices.publish(msg)
         self.get_logger().info('Devices: Publishing known devices list: %d devices' % len(self.known_devices))
 
+
     def devices_callback(self, msg):
         m = json.loads(msg.data)
         self.device_interval = m['interval']
@@ -141,12 +144,14 @@ class EventDetector(Node):
         #    self.publish_event('DEV','ERROR','Device discovery node restarted',self.new_devices)
         self.detect_device_event()
 
+
     def owntracks_callback(self, msg):
         self.get_logger().info('Owntracks: "%s"' % msg.data)
         md = json.loads(msg.data)
         track = md['payload']
         if track['type'] == 'EVENT':
             self.publish_event('TRACK','INFO',track['description'],track)
+
 
     def sun_callback(self, msg):
         m = json.loads(msg.data)
@@ -159,7 +164,8 @@ class EventDetector(Node):
         self.get_logger().info('Sun: %.1f hours until %s' % (rem_hours,event))
         if sun['secs_remaining'] <= max_sec:
             self.publish_event('/environment/sun','INFO','%s'% event,sun)
-            
+
+
     def scene_callback(self, msg):
         m = json.loads(msg.data)
         max_sec = m['interval']
@@ -171,6 +177,7 @@ class EventDetector(Node):
         self.get_logger().info('Scene: %.1f hours until %s' % (rem_hours,scenename))
         if scene['secs_remaining'] <= max_sec:
             self.publish_event('SCENE','INFO','%s'% scenename,scene)
+
 
     def forecast_callback(self, msg): 
         m = json.loads(msg.data)
@@ -184,6 +191,7 @@ class EventDetector(Node):
             self.period_name = wx[0]['name']
         else:
             self.get_logger().info('Forecast: %s - %s' % (wx[0]['name'],wx[0]['detailedForecast']))
+
 
     def conditions_callback(self, msg):
         m = json.loads(msg.data)
@@ -200,12 +208,14 @@ class EventDetector(Node):
                 self.get_logger().warning('Conditions: %s - %s (weird temp)' % (wx['textDescription'],wx['temperature']['value']))
         else:
             self.get_logger().warning('Conditions: %s - (no temp)' % (wx['textDescription']))
-                    
+
+
     def wx_alerts_callback(self, msg):
         m = json.loads(msg.data)
         wx = m['payload']
         #self.publish_event('WEATHER','INFO','NEW ALERT: %s - %.1fF'% (wx['textDescription'],wx['temperature']['value']*9/5+32),wx)
         self.get_logger().info('Alert: %s' % msg.data)
+
 
     def node_list_callback(self,msg):
         m = json.loads(msg.data)
@@ -226,7 +236,8 @@ class EventDetector(Node):
                 lost_nodes.append(known)
         for lost in lost_nodes:
             del self.known_nodes[lost]
-             
+
+
     def lighting_status_callback(self,msg):
         m = json.loads(msg.data)         
         lights = m['payload']['lights']
