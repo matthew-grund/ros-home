@@ -83,7 +83,7 @@ class EventDetector(Node):
             10)
         self.subscription_lighting_status # prevent unused variable warning
 
-        self.publisher_events = self.create_publisher(String, '/diagnostics/events', 10)
+        self.publisher_events = self.create_publisher(String, '/home/events', 10)
         self.period_name = ""
         self.timer_period = 10.0  # seconds
         self.timer = self.create_timer(self.timer_period, self.timer_callback)

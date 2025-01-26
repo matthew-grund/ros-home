@@ -18,7 +18,7 @@ class SMSMessager(Node):
         super().__init__('sms_messager')
         self.event_subscription = self.create_subscription(
             String,
-            '/diagnostics/events',
+            '/home/events',
             self.event_listener_callback,
             10)
         self.event_subscription  # prevent unused variable warning
