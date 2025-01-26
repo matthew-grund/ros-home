@@ -221,11 +221,12 @@ class EventDetector(Node):
         m = json.loads(msg.data)
         node_list = m['payload']
         # add new nodes
-        for node in node_list:
-            if node not in self.known_nodes:
+        for node_pid in node_list:
+            if node_pid not in self.known_nodes:
                 # add it
-                self.known_nodes[node] = node_list[node]
-                self.get_logger().warning(f"New ROS HOME node found: %s" % str(node))
+                node_name = node_list[node_pid]['name']
+                self.known_nodes[node_pid] = node_list[node_pid]
+                self.get_logger().warning(f"New ROS HOME node found: %s" % str(node_pid))
         # find lost nodes
         lost_nodes=[]
         for known in self.known_nodes:
