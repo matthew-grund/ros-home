@@ -14,12 +14,6 @@ def generate_launch_description():
         executable="config"
     )
 
-    # network discovery of smart home devices
-    discovery_node = Node(
-        package="home_core",
-        executable="netdisco",
-    )
-
     # the core control triggering concept in ROS Home is the event. This node filters data from "track"
     # nodes, and develops events.
     event_node = Node(
@@ -67,7 +61,6 @@ def generate_launch_description():
         executable="weather"
     )
 
-    ld.add_action(discovery_node)
     ld.add_action(weather_node)
     ld.add_action(sun_node)
     ld.add_action(schedule_node)
