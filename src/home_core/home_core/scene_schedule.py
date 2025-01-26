@@ -191,7 +191,7 @@ class HomeScheduler(Node):
     def sun_listener_callback(self,msg):
         msg = json.loads(msg.data)
         self.get_logger().info(f"Got sun events: %s" % json.dumps(msg['payload']['/home/events']))
-        self.named_events = msg['payload']['/home/events']
+        self.named_events = msg['payload']['events']
         if len(self.raw_schedule): 
             self.process_raw_schedule(self.raw_schedule) # reprocess schedule with latest sun events
         self.need_named_events = False        
