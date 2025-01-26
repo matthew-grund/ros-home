@@ -40,7 +40,7 @@ class SunTracker(Node):
         sundict['previous_event'] = self.prev_event
         sundict['secs_remaining'] = self.secs_remaining
         sundict['secs_elapsed'] = self.secs_elapsed
-        sundict['/home/events'] = self.sun_event
+        sundict['events'] = self.sun_event
         msgdict = {}
         msgdict['index'] = self.i
         msgdict['interval'] = self.timer_period
