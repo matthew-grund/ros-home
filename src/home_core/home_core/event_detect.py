@@ -163,7 +163,7 @@ class EventDetector(Node):
         event = sun['next_event']    
         self.get_logger().info('Sun: %.1f hours until %s' % (rem_hours,event))
         if sun['secs_remaining'] <= max_sec:
-            self.publish_event('/environment/sun','INFO','%s'% event,sun)
+            self.publish_event('SUN','INFO','%s'% event,sun)
 
 
     def scene_callback(self, msg):

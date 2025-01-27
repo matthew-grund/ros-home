@@ -10,7 +10,7 @@ import smtplib
 import ssl
 import json
 import datetime
-
+from email.mime.text import MIMEText
 
 class SMSMessager(Node):
 
@@ -58,12 +58,16 @@ class SMSMessager(Node):
 
     def send(self, subject, content):
         now = datetime.datetime.now()
-        now_str = now.strftime("%H%M")
+        now_str = now.strftime("[%H:%M] ")
+        content=now_str+content
         ssl_context = ssl.create_default_context()
         try:
+            msg = MIMEText(content,'plain')
+            msg['Subject'] = subject
+            msg['From'] = self.sender_mail
             service = smtplib.SMTP_SSL(self.smtp_server_domain_name, self.port, context=ssl_context)
             service.login(self.sender_mail, self.password)
-            result = service.sendmail(self.sender_mail, self.dest_mail, f"Subject: {subject}\n[{now_str}]  {content}")
+            result = service.sendmail(self.sender_mail, self.dest_mail,msg.as_string())
             service.quit()
         except Exception as e:
             self.get_logger().error(f"Couldn`t send SMS: {str(e)}")
