@@ -21,12 +21,6 @@ def generate_launch_description():
         executable="event"
     )
 
-    # MQTT interface to OwnTracks app
-    owntracks_node = Node(
-        package="home_core",
-        executable="owntracks",
-    )
- 
     # The monitor node measures and reports environmental data, and performance of the ROS HOME system
     monitor_node = Node(
         package="home_core",
@@ -66,7 +60,6 @@ def generate_launch_description():
     ld.add_action(schedule_node)
     ld.add_action(event_node)
     ld.add_action(sms_node)
-    ld.add_action(owntracks_node)
     ld.add_action(monitor_node)
     ld.add_action(config_node)
 
