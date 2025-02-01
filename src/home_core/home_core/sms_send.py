@@ -63,8 +63,8 @@ class SMSMessager(Node):
         ssl_context = ssl.create_default_context()
         try:
             msg = MIMEText(content,'plain')
-            msg['Subject'] = subject
-            msg['From'] = self.sender_mail
+            msg['Subject'] = subject.upper()
+            # msg['From'] = self.sender_mail
             service = smtplib.SMTP_SSL(self.smtp_server_domain_name, self.port, context=ssl_context)
             service.login(self.sender_mail, self.password)
             result = service.sendmail(self.sender_mail, self.dest_mail,msg.as_string())
@@ -72,7 +72,7 @@ class SMSMessager(Node):
         except Exception as e:
             self.get_logger().error(f"Couldn`t send SMS: {str(e)}")
             return
-        self.get_logger().info(f"Sent {subject}:{content}")
+        self.get_logger().info(f"Sent {subject} {content}")
 
 
 def main(args=None):
