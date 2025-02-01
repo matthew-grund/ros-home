@@ -17,6 +17,7 @@ class EventDetector(Node):
 
     def __init__(self):
         super().__init__('home_event_detect')
+        self.lighting_status={}
         self.new_devices=[]
         self.known_devices=[]
         self.known_nodes={}
@@ -241,21 +242,64 @@ class EventDetector(Node):
 
     def lighting_status_callback(self,msg):
         m = json.loads(msg.data)         
-        lights = m['payload']['lights']
-        num_on = 0 
-        num_lights = len(lights)
+        new_count = 0
+        change_count = 0
+        changes={}
+        missing_count = 0
+        num_reported = 0
+        status = m['payload']
+        id_base = status['type']+'/'+status['hub_ip'].replace('.','_')
+        lights = status['lights']
+        # any new lights?
+        new_lights=[]
         for light in lights:
-            if light['state'] != 0:  
-                num_on += 1
-        if self.num_lights_on != num_on:   # FIXME: better change detect on light status       
-            if num_on == num_lights:
-                self.publish_event('LIGHTS','WARNING',f"All %s lights are on" % m['payload']['type'],lights)
-            if num_on == 0:
-                self.publish_event('LIGHTS','INFO',f"All %s lights are off" % m['payload']['type'],lights)
-        self.get_logger().info(f"Lights: %d of %d lights on from %s" %(num_on,num_lights,m['payload']['type']))    
-        self.lights = lights  # FIXME: merge each lighting status message into master list    
-        self.num_lights_on = num_on
-                
+            light_id = light['room'].replace(' ','_') + '/' + id_base + '/' + 'id_' + light['id']
+            if light_id not in self.lighting_status:
+                new_count += 1
+                self.lighting_status[light_id] = light
+        if new_count > 0 :        
+            self.publish_event('LIGHTS','INFO',f"Found {new_count} new lights on {id_base}", status)
+        # any light status changes?
+        for light in lights:
+            num_reported += 1
+            light_id = light['room'].replace(' ','_') + '/' + id_base + '/' + 'id_' + light['id']
+            old_status = self.lighting_status[light_id]['state']
+            new_status = light['state']
+            if self.lighting_status[light_id]['state'] != light['state']:
+                change_count += 1
+                if light['room'] not in changes:
+                    newly_on = 0
+                    newly_off = 0
+                    newly_brighter = 0
+                    newly_dimmer = 0
+                else:
+                    newly_on = changes[light['room']]['on']
+                    newly_off = changes[light['room']]['off']
+                    newly_brighter = changes[light['room']]['brighter']
+                    newly_dimmer = changes[light['room']]['dimmer']
+                    
+                if new_status == 0:    
+                    newly_off+=1
+                elif old_status == 0:
+                    newly_on +=1
+                elif new_status > old_status:
+                    newly_brighter+=1
+                else:
+                    newly_dimmer+=1
+                changes[light['room']] = {'on':newly_on,'off':newly_off,'brighter':newly_brighter,'dimmer':newly_dimmer}                    
+            # remember light for next time        
+            self.lighting_status[light_id] = light
+        # report
+        room_list = []
+        for room in changes:
+            room_list.append(room)
+        if len(room_list) > 0:
+            self.publish_event('LIGHTS','INFO',f"Lights were adjusted in {', '.join(room_list)}.",status)
+            
+        # any lights missing?
+        self.get_logger().info(f"Lights: {num_reported} of {len(self.lighting_status)} total lights updated from {id_base}")     
+
+        
     def detect_device_event(self):
         known_len = len(self.known_devices)
         new_len = len(self.new_devices)
