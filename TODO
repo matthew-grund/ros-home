@@ -1,0 +1,15 @@
+TODO
+ROS Home
+
+[ ] - Event detector should handle forecasts in a smarter way
+[ ] - Event detector has bug in lighting change detection: needs more testing
+[ ] - Yamaha doesn't track all units properly (IP address issue?)
+[ ] - Event detector should track yamaha status changes for user interaction
+[ ] - Yamaha should accept "on" "off" "volume" commands
+[ ] - Lutron should accept "on" "off" and "level" commands
+[ ] - New presence detector should watch: lights, yamaha for room presence
+[ ] - New device for Logitech Harmony
+[ ] - New device for Ring doorbell
+[ ] - New device for Tuya ZIGBEE hub
+[ ] - New device for Nest thermostat
+[ ] - New device for Apple HomeKit bridge
