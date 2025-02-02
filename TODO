@@ -13,3 +13,6 @@ ROS Home
 [ ] - New device for Tuya ZIGBEE hub
 [ ] - New device for Nest thermostat
 [ ] - New device for Apple HomeKit bridge
+[ ] - Pushover add image messages
+[ ] - Pushover add app for SUN, LIGHTS, OCCUPANCY, HEAT_COOL
+[ ] - Pushover should have better app names (visible in the mobile app!)
