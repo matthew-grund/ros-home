@@ -33,6 +33,7 @@ setup(
             'schedule = home_core.scene_schedule:main',
             'sun = home_core.sun_track:main',
             'sms = home_core.sms_send:main',
+            'pushover = home_core.pushover_send:main',
             'weather = home_core.weather_track:main'
         ],
     },

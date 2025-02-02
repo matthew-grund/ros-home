@@ -41,6 +41,12 @@ def generate_launch_description():
         executable="sms"
     )
     
+    # The Pushover node sits on the "events" topic, and notifies users by Pushover
+    pushover_node = Node(
+        package="home_core",
+        executable="pushover"
+    )
+    
     # sun position in the sky can inform control decisions,
     # like lighting activation times, with events published like "Sunrise".
     sun_node = Node(
@@ -59,7 +65,8 @@ def generate_launch_description():
     ld.add_action(sun_node)
     ld.add_action(schedule_node)
     ld.add_action(event_node)
-    ld.add_action(sms_node)
+    # ld.add_action(sms_node)
+    ld.add_action(pushover_node)
     ld.add_action(monitor_node)
     ld.add_action(config_node)
 
