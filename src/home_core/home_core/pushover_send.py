@@ -42,36 +42,49 @@ class PushoverMessager(Node):
             self.send(subj,msg)
 
 
-    def config_listener_callback(self,msg):
+    def config_listener_callback(self, msg):
         msg = json.loads(msg.data)
         if msg['payload']['type'] == "PUSHOVER":
             self.user_token = msg['payload']['Account']['user_token'] 
             self.default_token = msg['payload']['Apps']['default_app_token']
+            self.lighting_token = msg['payload']['Apps']['lighting_app_token']
             self.env_token = msg['payload']['Apps']['environment_app_token']
+            self.diagnostics_token = msg['payload']['Apps']['diagnostics_app_token']
             self.need_config = False
             self.get_logger().info(f"Got PUSHOVER messager configuration")
             # TODO - add people config
 
+            
+    def app_token_from_message(self, subject, content):
+        if subject == 'CONDITIONS':
+            token = self.env_token
+        elif subject == 'FORECAST':
+            token = self.env_token
+        elif subject == 'LIGHTS':
+            token = self.lighting_token
+        elif subject == 'SCENE':
+            token = self.diagnostics_token
+        else:
+            token = self.default_token
+        return token
+            
 
     def send(self, subject, content):
         now = datetime.datetime.now()
         now_str = now.strftime("[%H:%M] ")
-        content=now_str+content
-        conn = http.client.HTTPSConnection("api.pushover.net:443")
+        full_content = now_str + content
 
-        if subject=='CONDITIONS':
-            token = self.env_token
-        elif subject=='FORECAST':
-            token = self.env_token
-        else:
-            token = self.default_token
+        token = self.app_token_from_message(subject, content)
+        
+        conn = http.client.HTTPSConnection("api.pushover.net:443")
 
         conn.request("POST", "/1/messages.json",
                           urllib.parse.urlencode({
                               "token": token,
                               "user": self.user_token,
                               "title": subject,
-                              "message": content,
+                              "ttl": 3600 * 4.0,
+                              "message": full_content,
                           }), { "Content-type": "application/x-www-form-urlencoded" })
         conn.getresponse()
 

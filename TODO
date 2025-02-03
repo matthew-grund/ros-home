@@ -17,3 +17,6 @@ ROS Home
 [ ] - Pushover add app for SUN, LIGHTS, OCCUPANCY, HEAT_COOL
 [ ] - Pushover should have better app names (visible in the mobile app!)
 [ ] - Pushover messages should have TTLs 4-6 hours, max.
+[ ] - All nodes should announce waiting for configuration
+[ ] - Home Monitor node needs a rewrite - ditch the psutil library
+[ ] - Home Monitor should accept "restart" and "stop" commands
