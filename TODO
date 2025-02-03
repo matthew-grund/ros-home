@@ -20,3 +20,5 @@ ROS Home
 [ ] - All nodes should announce waiting for configuration
 [ ] - Home Monitor node needs a rewrite - ditch the psutil library
 [ ] - Home Monitor should accept "restart" and "stop" commands
+[ ] - Event detector does not successfully detect lights "all off"
+
