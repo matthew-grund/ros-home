@@ -14,7 +14,7 @@ class HomeConfigurator(Node):
 
     def __init__(self):
         super().__init__('home_config')
-        self.root_folder = "/data/home_ws/config"
+        self.root_folder = "/data/ros-home/config"
         self.publisher_settings = self.create_publisher(String, '/home/configuration', 10)
         self.timer_period = 0.5  # seconds
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
@@ -24,7 +24,11 @@ class HomeConfigurator(Node):
 
 
     def timer_callback(self):
-        ls = os.listdir(self.root_folder)
+        try:
+            ls = os.listdir(self.root_folder)
+        except FileNotFoundError:
+            self.get_logger().error(f"Config folder '{self.root_folder}' not found")
+            ls = []
         for f in ls:
             if (not f.startswith(".#") and (not f.startswith("~"))):
                 if f.endswith(".ini") or f.endswith(".INI"):
