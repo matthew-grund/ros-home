@@ -10,6 +10,7 @@ from std_msgs.msg import Float32
 from std_msgs.msg import Int32
 import json
 import subprocess
+import os
 
 class HomeObserver(Node):
 
@@ -117,12 +118,10 @@ class HomeObserver(Node):
     def restart_node(self,old_proc):
             n = old_proc['name']
             p = old_proc['pkg']
-            cmd = [self.ros2_path,'run',p,n]
-            ret = subprocess.run(cmd,stdin=subprocess.DEVNULL,
-                                 stdout=subprocess.DEVNULL,
-                                 stderr=subprocess.DEVNULL,
-                                 start_new_session=True)
-            self.get_logger().info(f"Restarting {n.upper()} from package {p.upper()}")
+            cmd = f"{self.ros2_path} run {p} {n}"
+            print(f"Spawning command: {cmd}")
+            ret = subprocess.Popen([self.ros2_path,"run",p,n],start_new_session=True)
+            self.get_logger().info(f"Restarted {n.upper()} from package {p.upper()}")
 
             
     def get_user_processes(self):
