@@ -47,6 +47,7 @@ class PushoverMessager(Node):
         if msg['payload']['type'] == "PUSHOVER":
             self.user_token = msg['payload']['Account']['user_token'] 
             self.default_token = msg['payload']['Apps']['default_app_token']
+            self.daylight_token = msg['payload']['Apps']['daylight_app_token']
             self.lighting_token = msg['payload']['Apps']['lighting_app_token']
             self.env_token = msg['payload']['Apps']['environment_app_token']
             self.diagnostics_token = msg['payload']['Apps']['diagnostics_app_token']
@@ -64,6 +65,8 @@ class PushoverMessager(Node):
             token = self.lighting_token
         elif subject == 'SCENE':
             token = self.diagnostics_token
+        elif subject == 'SUN':
+            token = self.daylight_token
         else:
             token = self.default_token
         return token
