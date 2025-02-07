@@ -44,20 +44,26 @@ class HomeObserver(Node):
             # build a list of current nodes
             for proc in procs:
                 pid = proc['pid']
+                name = proc['name']
                 cmdline = ' '.join(proc['cmd'])
                 if 'ros' in cmdline:
                     if 'home_core' in cmdline:
                         if self.ros2_path not in cmdline:
                             self.current_nodes[pid]=proc
                             if pid not in self.known_nodes:
-                                self.get_logger().info(f"Found new node pid={pid}")
+                                self.get_logger().info(f"Found new {name.upper()} node pid:{pid}")
                             self.known_nodes[pid] = proc
             # look for nodes that died
             dead_pids = []
             for pid in self.known_nodes:
+                name=self.known_nodes[pid]['name']
                 if pid not in self.current_nodes:
-                    self.get_logger().error(f"Node pid={pid} is no longer running")
+                    self.get_logger().error(f"Node {name.upper()} pid:{pid} is no longer running")
                     dead_pids.append(pid)
+                    # attempt to restart it
+                    # self.restart_node(self.known_nodes[pid])
+                        
+            # de-list nodes that died        
             for pid in dead_pids:
                 self.known_nodes.pop(pid)
             self.publish_node_list()
@@ -106,7 +112,15 @@ class HomeObserver(Node):
             self.get_logger().info(f"Read ros2 path: '{ros2}'")
         else:
             self.get_logger().error(f"get_ros2_path(): which ros2 failed")
-            
+
+
+    def restart_node(self,old_proc):
+            n = old_proc['name']
+            p = old_proc['pkg']
+            cmd = [self.ros2_path,'run',p,n,'&']
+            ret = subprocess.run(cmd) # ,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            self.get_logger().info(f"Restarting {n.upper()} from package {p.upper()}")
+
             
     def get_user_processes(self):
         rhp=[]
@@ -128,6 +142,18 @@ class HomeObserver(Node):
             p['pid'] = int(field[1])
             p['status'] = field[2]
             cmd = field[3:]
+            name = '<unknown>'
+            pkg = '<unknown>'
+            if len(cmd) >= 2:
+                exe_path = cmd[-1]
+                if exe_path == '--ros-args':
+                    exe_path = cmd[-2]
+                exe_parts = exe_path.split('/')
+                name = exe_parts[-1]
+                if len(exe_parts) > 1:
+                    pkg = exe_parts[-2]
+            p['name'] = name
+            p['pkg'] = pkg
             p['cmd'] = cmd
             cmdstr=" ".join(cmd)
             if uname == self.user_name:
