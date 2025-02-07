@@ -61,7 +61,7 @@ class HomeObserver(Node):
                     self.get_logger().error(f"Node {name.upper()} pid:{pid} is no longer running")
                     dead_pids.append(pid)
                     # attempt to restart it
-                    # self.restart_node(self.known_nodes[pid])
+                    self.restart_node(self.known_nodes[pid])
                         
             # de-list nodes that died        
             for pid in dead_pids:
@@ -117,8 +117,11 @@ class HomeObserver(Node):
     def restart_node(self,old_proc):
             n = old_proc['name']
             p = old_proc['pkg']
-            cmd = [self.ros2_path,'run',p,n,'&']
-            ret = subprocess.run(cmd) # ,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            cmd = [self.ros2_path,'run',p,n]
+            ret = subprocess.run(cmd,stdin=subprocess.DEVNULL,
+                                 stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.DEVNULL,
+                                 start_new_session=True)
             self.get_logger().info(f"Restarting {n.upper()} from package {p.upper()}")
 
             
