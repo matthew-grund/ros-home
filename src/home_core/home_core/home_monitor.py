@@ -9,7 +9,8 @@ from std_msgs.msg import String
 from std_msgs.msg import Float32
 from std_msgs.msg import Int32
 import json
-import psutil
+import subprocess
+
 class HomeObserver(Node):
 
     def __init__(self):
@@ -19,53 +20,120 @@ class HomeObserver(Node):
         self.wx_wind_speed_kph = []
         self.wx_wind_dir_from_degrees = []
         self.wx_humidity_percent = []
-        self.current_nodes = {}
         self.known_nodes = {}
+        self.current_nodes = {}
         self.prev_num_nodes = 0     
-        self.publisher_nodes = self.create_publisher(Int32, '/nodes/num_running', 10)
-        self.publisher_node_list = self.create_publisher(String,'/nodes/list', 10)
+        self.need_user_name = True
+        self.need_ros2_path = True
+        self.publisher_nodes = self.create_publisher(Int32, '/home/nodes/count', 10)
+        self.publisher_node_list = self.create_publisher(String,'/home/nodes/list', 10)
         self.node_list_iter = 0
-        self.ps_timer_period =  1.0 # seconds
+        self.ps_timer_period =  0.5 # seconds
         self.ps_timer = self.create_timer(self.ps_timer_period, self.ps_timer_callback)
 
 
     def ps_timer_callback(self):
-        # check all running processes for ROS  HOME  processes
-        self.current_nodes = {}
-        pids = psutil.pids()
-        for pid in pids:
-            if psutil.pid_exists(pid):
-                try:
-                    p = psutil.Process(pid)
-                except:
-                    self.get_logger().info(f"Process inspection stumbled on pid %s" % pid)
-                    return
-                else:          
-                    p_dict = p.as_dict()
-                    p_args = p_dict['cmdline']
-                    # print(f"{p.name()} {len(p_args)}::'{p_args}'")
-                    if p_args is not None:
-                        if len(p_args) == 3:
-                            # print(f"{p.name()} {len(p_args)}::'{p_args}'")
-                            if ("ros-args" in p_args[2]):
-                                # print(f"{p.name()} {len(p_args)}::'{p_args}'")
-                                # self.get_logger().info(f"node %s[%d] => %s" % (p.name(), pid, str(p_cl_py))) 
-                                self.current_nodes[str(pid)] = { 'name':p.name(),'pid':pid, 'status':p.status(), 'cpu':p.cpu_percent(),
-                                                                'mem':p.memory_percent(),'args': p_args }
-        if self.node_list_iter % 10 == 0:
-            self.get_logger().info(f"Monitor: {len(self.current_nodes)} ROS HOME nodes running. [{self.node_list_iter}]")
-        self.node_list_iter += 1
+        if self.need_user_name:
+            self.get_user_name()
+        elif self.need_ros2_path:
+            self.get_ros2_path()
+        else:    
+            # check all running processes for ROS-HOME processes
+            procs = self.get_user_processes() 
+            self.current_nodes = {}
+            # build a list of current nodes
+            for proc in procs:
+                pid = proc['pid']
+                cmdline = ' '.join(proc['cmd'])
+                if 'ros' in cmdline:
+                    if 'home_core' in cmdline:
+                        if self.ros2_path not in cmdline:
+                            self.current_nodes[pid]=proc
+                            if pid not in self.known_nodes:
+                                self.get_logger().info(f"Found new node pid={pid}")
+                            self.known_nodes[pid] = proc
+            # look for nodes that died
+            dead_pids = []
+            for pid in self.known_nodes:
+                if pid not in self.current_nodes:
+                    self.get_logger().error(f"Node pid={pid} is no longer running")
+                    dead_pids.append(pid)
+            for pid in dead_pids:
+                self.known_nodes.pop(pid)
+            self.publish_node_list()
+            self.publish_node_count()
+            
+            
+    def publish_node_count(self):     
         msg = Int32()
-        msg.data = len(self.current_nodes)
+        msg.data = len(self.known_nodes)
         self.publisher_nodes.publish(msg)     # a number, for plotting, etc.
+        self.get_logger().debug(f"Found {msg.data} home nodes running")
+
+        
+    def publish_node_list(self):    
         msg = String()
         m = {}
         m['index'] = self.node_list_iter
         m['interval'] = self.ps_timer_period
-        m['payload'] = self.current_nodes
+        m['payload'] = self.known_nodes
         msg.data = json.dumps(m)
         self.publisher_node_list.publish(msg) # a JSON string    
         # print(self.current_nodes)
+
+
+    def get_user_name(self):
+        cmd = ['/usr/bin/whoami']
+        ret = subprocess.run(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        uname=ret.stdout.decode('utf-8').strip()
+        # print(f"Got user name: '{uname}'")
+        if len(uname) > 0 :
+            self.user_name = uname
+            self.need_user_name = False
+            self.get_logger().info(f"Read user name: '{uname}'")
+        else:
+            self.get_logger().error(f"get_user_name(): User name read failed")
+            
+            
+    def get_ros2_path(self):
+        cmd = ['/usr/bin/which','ros2']
+        ret = subprocess.run(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        ros2=ret.stdout.decode('utf-8').strip()
+        # print(f"Got user name: '{uname}'")
+        if len(ros2) > 0 :
+            self.ros2_path = ros2
+            self.need_ros2_path = False
+            self.get_logger().info(f"Read ros2 path: '{ros2}'")
+        else:
+            self.get_logger().error(f"get_ros2_path(): which ros2 failed")
+            
+            
+    def get_user_processes(self):
+        rhp=[]
+        if self.need_user_name:
+            self.get_logger().error(f"get_user_processes(): Username not set")
+            return rhp
+        cmd = ['ps','axo','uname,pid,stat,cmd']
+        ret = subprocess.run(cmd,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        psstr=ret.stdout.decode('utf-8')
+        pslines=psstr.splitlines()
+        pslines=pslines[1:]
+        for line in pslines:
+            #print(line)
+            p={}
+            field=line.split()
+            #print(field)
+            uname=field[0]
+            p['uname'] = uname
+            p['pid'] = int(field[1])
+            p['status'] = field[2]
+            cmd = field[3:]
+            p['cmd'] = cmd
+            cmdstr=" ".join(cmd)
+            if uname == self.user_name:
+                if 'ps ' not in cmdstr: 
+                    rhp.append(p)
+        return rhp
 
 
 def main(args=None):
