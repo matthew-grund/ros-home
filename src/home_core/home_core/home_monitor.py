@@ -11,6 +11,7 @@ from std_msgs.msg import Int32
 import json
 import subprocess
 import os
+import datetime
 
 class HomeObserver(Node):
 
@@ -26,11 +27,49 @@ class HomeObserver(Node):
         self.prev_num_nodes = 0     
         self.need_user_name = True
         self.need_ros2_path = True
+        self.need_startup_notify = True
         self.publisher_nodes = self.create_publisher(Int32, '/home/nodes/count', 10)
         self.publisher_node_list = self.create_publisher(String,'/home/nodes/list', 10)
         self.node_list_iter = 0
         self.ps_timer_period =  0.5 # seconds
         self.ps_timer = self.create_timer(self.ps_timer_period, self.ps_timer_callback)
+
+        self.publisher_events = self.create_publisher(String, '/home/events', 10)
+        self.period_name = ""
+        self.i = 0
+        self.dev_index = 0
+        self.event_index = 0
+
+        self.publisher_devices = self.create_publisher(String, '/devices/known/network', 10)
+        self.wx_latest_conditions = ""
+        self.wx_recent_forecasts = {}
+        self.lights = []
+        self.num_lights_on = -1
+
+
+    def publish_event(self, desc):
+        typename = 'MONITOR'
+        severity = 'WARNING'
+        msg = String()
+        event = {}
+        event['event_type'] = typename
+        event['severity'] = severity
+        event['timestamp'] = datetime.datetime.utcnow().isoformat()
+        event['description'] = desc
+        event['detail'] = self.known_nodes
+        m = {}
+        m['index'] = self.event_index
+        m['interval'] = 0.0
+        m['payload'] = event
+        msg.data = json.dumps(m)
+        self.publisher_events.publish(msg)
+        if severity=='ERROR':
+            self.get_logger().error(desc)
+        elif severity=='WARNING':
+            self.get_logger().warn(desc)
+        else:
+            self.get_logger().info(desc)
+        self.event_index += 1
 
 
     def ps_timer_callback(self):
@@ -38,6 +77,9 @@ class HomeObserver(Node):
             self.get_user_name()
         elif self.need_ros2_path:
             self.get_ros2_path()
+        elif self.need_startup_notify:
+            self.need_startup_notify = False
+            self.publish_event('MONITOR node started.');
         else:    
             # check all running processes for ROS-HOME processes
             procs = self.get_user_processes() 
@@ -59,7 +101,7 @@ class HomeObserver(Node):
             for pid in self.known_nodes:
                 name=self.known_nodes[pid]['name']
                 if pid not in self.current_nodes:
-                    self.get_logger().error(f"Node {name.upper()} pid:{pid} is no longer running")
+                    self.publish_event(f"Node {name.upper()} pid:{pid} is no longer running")
                     dead_pids.append(pid)
                     # attempt to restart it
                     self.restart_node(self.known_nodes[pid])
@@ -118,10 +160,14 @@ class HomeObserver(Node):
     def restart_node(self,old_proc):
             n = old_proc['name']
             p = old_proc['pkg']
-            cmd = f"{self.ros2_path} run {p} {n}"
-            print(f"Spawning command: {cmd}")
+            self.start_node(n,p)
+
+            
+    def start_node(self,name,pkg):
+            cmd = f"{self.ros2_path} run {pkg} {nname}"
+            # print(f"Spawning command: {cmd}")
             ret = subprocess.Popen([self.ros2_path,"run",p,n],start_new_session=True)
-            self.get_logger().info(f"Restarted {n.upper()} from package {p.upper()}")
+            self.get_logger().info(f"Started {n.upper()} from package {p.upper()}")
 
             
     def get_user_processes(self):
