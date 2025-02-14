@@ -30,6 +30,7 @@ class WeatherTracker(Node):
         self.need_forecast_url = True
         self.need_obs_station_url = True
         self.need_config_location = True
+
         
     def timer_callback(self):
         if self.need_config_location:
@@ -83,6 +84,11 @@ class WeatherTracker(Node):
                 else:
                     self.get_logger().info('Current: "%s" (NULL temp)' % observations['textDescription'])
                 self.i += 1
+                if self.i > 30: # every 15 minutes fetch the base URLs again
+                    self.i = 0
+                    self.need_forecast_url = True
+                    self.need_obs_station_url = True
+                    
 
             # forecast
             try:    
