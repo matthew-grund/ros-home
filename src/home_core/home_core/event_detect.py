@@ -185,7 +185,7 @@ class EventDetector(Node):
         max_sec = m['interval']
         wx = m['payload']
         if m['index'] == 0:
-            self.publish_event('FORECAST','ERROR','Weather tracker node restarted',wx)
+            # self.publish_event('FORECAST','ERROR','Weather tracker node restarted',wx)
             self.period_name = ""
         if self.period_name != wx[0]['name']:
             self.publish_event('FORECAST','INFO','%s - %s'% (wx[0]['name'],wx[0]['detailedForecast']),wx)
