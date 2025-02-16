@@ -21,6 +21,42 @@ class HomeConfigurator(Node):
         self.i = 0
         self.files = {}
         self.get_logger().info(f"Config watching folder '{self.root_folder}' for INI files")
+        self.subscription_json_commands = self.create_subscription(
+            String,
+            '/home/commands/json',
+            self.json_commands_callback,
+            10)
+        # self.subscription_json_commands  # prevent unused variable warning
+        self.subscription_raw_commands = self.create_subscription(
+            String,
+            '/home/commands/raw',
+            self.raw_commands_callback,
+            10)
+        # self.subscription_raw_commands  # prevent unused variable warning
+
+
+    def json_commands_callback(self,msg):
+        m = json.loads(msg.data)
+        # self.device_interval = m['interval']
+        command = m['payload']
+        #if m['index'] == 0:
+        #    self.publish_event('DEV','ERROR','Device discovery node restarted',self.new_devices)
+        if "argv" in command:
+            argv = command['argv']
+            self.parse_command(argv)
+
+
+    def raw_commands_callback(self,msg):
+        command = msg.data
+        argv=command.split()
+        self.parse_command(argv)
+
+
+    def parse_command(self,argv):
+        # FIXME: this is not a very functional command shell
+        if "CONFIG" in argv[0].upper():
+            # if len(argv) == 1:
+            self.files = {}
 
 
     def timer_callback(self):
