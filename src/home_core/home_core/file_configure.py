@@ -53,10 +53,15 @@ class HomeConfigurator(Node):
 
 
     def parse_command(self,argv):
+        cmd_str = " ".join(argv)
+        self.get_logger().info(f"Got command: '{cmd_str}'")
         # FIXME: this is not a very functional command shell
         if "CONFIG" in argv[0].upper():
             # if len(argv) == 1:
+            self.get_logger().warning(f"Reloading configuration from '{self.root_folder}'")
             self.files = {}
+        else:
+            self.get_logger().info(f"Command not for file_configure")
 
 
     def timer_callback(self):
