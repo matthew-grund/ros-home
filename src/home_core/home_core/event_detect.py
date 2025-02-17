@@ -21,6 +21,7 @@ class EventDetector(Node):
         self.new_devices=[]
         self.known_devices=[]
         self.known_nodes={}
+        self.forecasts=[]
         self.subscription_devices = self.create_subscription(
             String,
             '/devices/discovered/network',
@@ -91,7 +92,7 @@ class EventDetector(Node):
         self.i = 0
         self.dev_index = 0
         self.event_index = 0
-        
+    
         self.publisher_devices = self.create_publisher(String, '/devices/known/network', 10)
         self.wx_latest_conditions = ""
         self.wx_recent_forecasts = {}
@@ -101,6 +102,26 @@ class EventDetector(Node):
 
     def timer_callback(self):
         self.i += 1
+        self.prune_forecast_list()
+
+
+    def prune_forecast_list(self):
+        now = datetime.datetime.now().timestamp()
+        f_len = len(self.forecasts)
+        if f_len < 2:
+            return
+        new_forecasts = []
+        pruned_names = []
+        for f_tuple in self.forecasts:
+            expiry_timestamp = f_tuple[0]
+            if expiry_timestamp > now:
+                new_forecasts.append(f_tuple)
+            else:
+                pruned_names.append(f_tuple[1]["name"])
+        if len(pruned_names) > 0:
+            self.get_logger.info(f"Pruned forecast for '{"', ".join(pruned_names)}'")
+            self.publish_forecast_event(new_forecasts[0][0])
+        self.forecasts = new_forecasts
 
 
     def publish_event(self, typename, severity, desc, detail):
@@ -182,16 +203,62 @@ class EventDetector(Node):
 
     def forecast_callback(self, msg): 
         m = json.loads(msg.data)
-        max_sec = m['interval']
-        wx = m['payload']
-        if m['index'] == 0:
-            # self.publish_event('FORECAST','ERROR','Weather tracker node restarted',wx)
-            self.period_name = ""
-        if self.period_name != wx[0]['name']:
-            self.publish_event('FORECAST','INFO','%s - %s'% (wx[0]['name'],wx[0]['detailedForecast']),wx)
-            self.period_name = wx[0]['name']
+        wx = m['payload']  # a list of forecast dicts
+        num_forecasts = len(self.forecasts)
+        for forecast in wx:
+            self.add_forecast(forecast) # check for new ones in here, redundats are dropped
+        num_new_forecasts = len(self.forecasts) - num_forecasts
+        # send the first one
+        if num_forecasts == 0 and num_new_forecasts > 0:
+            # publish most current forecast
+            self.publish_forecast_event(self.forecasts[0][1])    
+        # if we got a bunch summarize
+        if num_new_forecasts >= 3:
+            self.publish_forecast_summary_event()
+
+
+    def add_forecast(self,forecast:dict):
+        expiry_timestamp = forecast['endTime']
+        if len(self.forecasts) == 0:
+            self.get_logger().warning(f"First new forecast: {forecast["name"]} - {forecast["shortForecast"]}.")
+            self.forecasts.append([expiry_timestamp,forecast])
+        elif expiry_timestamp < self.forecasts[-1][0]:
+            # replace it
+            self.get_logger().warning(f"Updated forecast for {forecast["name"]}, replacing.")
+            new_forecasts = []
+            got_it = False
+            for f_tuple in self.forecasts:
+                if f_tuple[0] == expiry_timestamp:
+                    new_forecasts.append([expiry_timestamp,forecast])
+                    got_it = True
+                else:
+                    new_forecasts.append(f_tuple)
+            if not got_it:
+                self.getlogger().warning(f"Forecast for {forecast["name"]} was missing, added.")
+                new_forecasts.append([expiry_timestamp,forecast])
+                new_forecasts.sort()
+            self.forecasts = new_forecasts
+        else: # newer in time than any forecast we've got
+            self.forecasts.append([expiry_timestamp,forecast])
+            self.get_logger().info(f"added forcast for {forecast['name']} [exp:{forecast['endTime']}] len={len(self.forecasts)}")
+
+
+    def publish_forecast_event(self, forecast):
+        self.publish_event('FORECAST','INFO', f"{forecast['name']} - {forecast['detailedForecast']}", forecast) 
+    
+
+    def publish_forecast_summary_event(self):
+        if len(self.forecasts) == 2:
+            self.publish_forecast_event(self.forecasts[0][1])
+            self.publish_forecast_event(self.forecasts[1][1])
         else:
-            self.get_logger().info('Forecast: %s - %s' % (wx[0]['name'],wx[0]['detailedForecast']))
+            summary = "Summary: "
+            for f_tuple in self.forecasts:
+                summary += f_tuple[1]["name"] + " - "
+                summary += f_tuple[1]["shortForecast"] + ", "
+            if len(summary) > 2:
+                summary = summary[:-2]
+            self.publish_event('FORECAST','INFO',summary,self.forecasts)
 
 
     def conditions_callback(self, msg):
