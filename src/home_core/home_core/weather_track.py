@@ -17,7 +17,8 @@ class WeatherTracker(Node):
         super().__init__('weather_tracker')
         self.publisher_wx = self.create_publisher(String, '/environment/weather/forecast', 10)
         self.publisher_conditions = self.create_publisher(String, '/environment/weather/conditions', 10)   
-        self.publisher_alerts = self.create_publisher(String, '/environment/weather/alerts', 10)      
+        self.publisher_alerts = self.create_publisher(String, '/environment/weather/alerts', 10)  
+        self.publisher_commands = self.create_publisher(String,'/home/commands/raw', 10)    
         self.timer_period = 30.0  # seconds
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
         self.config_subscription = self.create_subscription(
@@ -27,6 +28,7 @@ class WeatherTracker(Node):
             10)
         self.config_subscription
         self.i = 0
+        self.ticks_elapsed = 0
         self.need_forecast_url = True
         self.need_obs_station_url = True
         self.need_config_location = True
@@ -34,6 +36,11 @@ class WeatherTracker(Node):
         
     def timer_callback(self):
         if self.need_config_location:
+            self.ticks_elapsed += 1
+            if self.ticks_elapsed >2:
+                msg = String()
+                msg.data = 'configure location'  # ask the configuration thing to send location
+                self.publisher_commands.publish(msg)
             return  # don't do anything until we get the home location, from the config node
 
         if self.need_forecast_url:
