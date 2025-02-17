@@ -14,6 +14,7 @@ class PushoverMessager(Node):
 
     def __init__(self):
         super().__init__('pushover_messager')
+        self.publisher_commands = self.create_publisher(String,'/home/commands/json', 10)
         self.event_subscription = self.create_subscription(
             String,
             '/home/events',
@@ -27,18 +28,32 @@ class PushoverMessager(Node):
             10)
         self.config_subscription  # prevent unused variable warning
         self.get_logger().info(f"Waiting for config message on topic '/home/configuration'")
-
+        self.timer_period = 15.0
+        self.ticks_elapsed = 0
+        self.timer = self.create_timer(self.timer_period, self.timer_callback)
         self.need_config = True
+
+
+    def timer_callback(self):
+        if self.need_config:
+            self.ticks_elapsed += 1
+            if self.ticks_elapsed >2:
+                m = {}
+                m['index'] = self.ticks_elapsed
+                m['interval'] = self.timer_period
+                m['payload'] = {"argv":["configure","pushover"]}
+                msg = String()
+                msg.data = json.dumps(m)  # ask the configuration thing to send pushover config
+                self.publisher_commands.publish(msg)
+                self.get_logger().warning(f"No config after {self.timer_period * self.ticks_elapsed} sec. sending command.")
 
 
     def event_listener_callback(self, msg):
         if not self.need_config:
             m = json.loads(msg.data)
-
             event = m['payload']
             subj = event['event_type']
             msg = event['description']
-
             self.send(subj,msg)
 
 
