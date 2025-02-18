@@ -105,7 +105,7 @@ class EventDetector(Node):
         self.dev_index = 0
         self.event_index = 0
         self.publisher_devices = self.create_publisher(String, '/devices/known/network', 10)
-        self.wx_latest_conditions = ""
+        self.wx_latest_conditions = {}
         self.wx_recent_forecasts = {}
         self.lights = []
         self.num_lights_on = -1
@@ -262,7 +262,7 @@ class EventDetector(Node):
         if len(self.forecasts) == 0:
             self.get_logger().warning(f"First new forecast: {forecast["name"]} - {forecast["shortForecast"]}.")
             self.forecasts.append([expiry_timestamp,forecast])
-        elif expiry_timestamp < self.forecasts[-1][0]:
+        elif expiry_timestamp <= self.forecasts[-1][0]:
             # replace it
             self.get_logger().warning(f"Updated forecast for {forecast["name"]}, replacing.")
             new_forecasts = []
@@ -295,7 +295,7 @@ class EventDetector(Node):
             summary = "Summary: "
             for f_tuple in self.forecasts:
                 summary += f_tuple[1]["name"] + " - "
-                summary += f_tuple[1]["shortForecast"] + ", "
+                summary += f_tuple[1]["shortForecast"] + "; "
             if len(summary) > 2:
                 summary = summary[:-2]
             self.publish_event('FORECAST','INFO',summary,self.forecasts)
@@ -304,18 +304,16 @@ class EventDetector(Node):
     def conditions_callback(self, msg):
         m = json.loads(msg.data)
         wx = m['payload']
-        if wx['temperature']['value']:        
-            if (type(wx['temperature']['value']) == int) or (type(wx['temperature']['value']) == float):
-                conditions_desc = '%s - %.1fF' % (wx['textDescription'],wx['temperature']['value']*9/5+32)
-                if conditions_desc != self.wx_latest_conditions:   # only publish a conditions event if the conditions have changed
-                    self.wx_latest_conditions = conditions_desc
-                    self.publish_event('CONDITIONS','INFO',conditions_desc,wx)
-                else: 
-                    self.get_logger().info('Conditions: %s - %.1fF' % (wx['textDescription'],wx['temperature']['value']*9/5+32))
-            else:
-                self.get_logger().warning('Conditions: %s - %s (weird temp)' % (wx['textDescription'],wx['temperature']['value']))
+        station_id = wx['id']
+        summary = wx['summary']
+        observations = wx['observations']
+        if station_id in self.wx_latest_conditions:
+            if summary != self.wx_alerts_callback[station_id]:
+                self.publish_event('CONDITIONS','INFO',summary,observations)
+                self.wx_latest_conditions[station_id] = summary
         else:
-            self.get_logger().warning('Conditions: %s - (no temp)' % (wx['textDescription']))
+            self.publish_event('CONDITIONS','INFO',summary,observations)
+            self.wx_latest_conditions[station_id] = summary
 
 
     def wx_alerts_callback(self, msg):

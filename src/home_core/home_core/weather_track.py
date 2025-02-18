@@ -131,7 +131,7 @@ class WeatherTracker(Node):
                 m = {}
                 m['index'] = self.i
                 m['interval'] = self.timer_period
-                m['payload'] = {'summary':summary,'observations':observations}
+                m['payload'] = {'id':station['id'],'summary':summary,'observations':observations}
                 msg = String()
                 msg.data = json.dumps(m)
                 self.publisher_conditions.publish(msg)
@@ -173,6 +173,7 @@ class WeatherTracker(Node):
             self.tzname = msg['payload']['Timezone']['tzname']
             self.need_config_location = False
             self.get_logger().info(f"Got config: Location is {self.city}, {self.state}")
+
 
     def deg_to_dir_str(self,deg:float):
         if deg >= 345 or deg <= 15:
