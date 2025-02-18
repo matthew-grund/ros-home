@@ -72,7 +72,7 @@ class WeatherTracker(Node):
                 self.stations = {}
                 for feature in stations['features']:
                     feature_count += 1
-                    if feature_count < 18: # only grab the closest few stations
+                    if feature_count < 10: # only grab the closest few stations
                         station_id = feature['properties']['stationIdentifier']
                         station = {}
                         station['id'] = station_id
@@ -120,9 +120,9 @@ class WeatherTracker(Node):
                     obs_has_winddir = False    
 
                 if obs_has_windspeed and obs_has_winddir and obs_has_temp:
-                    summary=f"Conditions at {station['name']} [{station['id']}] - {observations['textDescription']} {temp_f:.1f}F {int(windspeed_kts)}kts {self.deg_to_dir_str(winddir_deg)}"
+                    summary=f"Conditions at {station['name']} [{station['id']}] - {observations['textDescription']} {int(temp_f)}{u"\u00B0"}F {int(windspeed_kts)}kts {self.deg_to_dir_str(winddir_deg)}"
                 elif obs_has_temp:
-                    summary=f"Conditions at {station['name']} [{station['id']}] - {observations['textDescription']} {temp_f:.1f}F (NULL WIND)"
+                    summary=f"Conditions at {station['name']} [{station['id']}] - {observations['textDescription']} {int(temp_f)}{u"\u00B0"}F (NULL WIND)"
                 elif obs_has_windspeed and obs_has_winddir:
                     summary=f"Conditions at {station['name']} [{station['id']}] - {observations['textDescription']} {int(windspeed_kts)}kts {self.deg_to_dir_str(winddir_deg)} (NULL TEMP)"
                 else:

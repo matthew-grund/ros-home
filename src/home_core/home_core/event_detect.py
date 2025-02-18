@@ -264,7 +264,7 @@ class EventDetector(Node):
             self.forecasts.append([expiry_timestamp,forecast])
         elif expiry_timestamp <= self.forecasts[-1][0]:
             # replace it
-            self.get_logger().warning(f"Updated forecast for {forecast["name"]}, replacing.")
+            # self.get_logger().warning(f"Updated forecast for {forecast["name"]}, replacing.")
             new_forecasts = []
             got_it = False
             for f_tuple in self.forecasts:
@@ -308,7 +308,7 @@ class EventDetector(Node):
         summary = wx['summary']
         observations = wx['observations']
         if station_id in self.wx_latest_conditions:
-            if summary != self.wx_alerts_callback[station_id]:
+            if summary != self.wx_latest_conditions[station_id]:
                 self.publish_event('CONDITIONS','INFO',summary,observations)
                 self.wx_latest_conditions[station_id] = summary
         else:
