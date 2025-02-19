@@ -5,7 +5,7 @@
 #
 
 from cmath import nan
-from distutils.log import set_verbosity
+#from distutils.log import set_verbosity
 import rclpy
 from rclpy.node import Node
 
@@ -131,7 +131,7 @@ class EventDetector(Node):
                 pruned_names.append(f_tuple[1]["name"])
         if len(pruned_names) > 0:
             self.get_logger().info(f"Pruned forecast for '{"', ".join(pruned_names)}'")
-            self.publish_forecast_event(new_forecasts[0][0])
+            self.publish_forecast_event(new_forecasts[0][1])
         self.forecasts = new_forecasts
 
 
