@@ -14,7 +14,63 @@ import json
 import datetime
 
 class EventDetector(Node):
+    """
+    EventDetector is a ROS node that subscribes to various topics to detect and handle events related to devices, people tracking, lighting, weather, and more. It publishes events and known devices to specific topics.
+    Attributes:
+        lighting_status (dict): Dictionary to store the status of lights.
+        new_devices (list): List to store newly discovered devices.
+        known_devices (list): List to store known devices.
+        known_nodes (dict): Dictionary to store known nodes.
+        forecasts (list): List to store weather forecasts.
+        subscription_devices (Subscription): Subscription to the '/devices/discovered/network' topic.
+        subscription_owntracks (Subscription): Subscription to the '/people/tracking/owntracks' topic.
+        subscription_scene (Subscription): Subscription to the '/lighting/scenes' topic.
+        subscription_sun (Subscription): Subscription to the '/environment/sun' topic.
+        subscription_forecast (Subscription): Subscription to the '/environment/weather/forecast' topic.
+        subscription_conditions (Subscription): Subscription to the '/environment/weather/conditions' topic.
+        subscription_json_commands (Subscription): Subscription to the '/home/commands/json' topic.
+        subscription_raw_commands (Subscription): Subscription to the '/home/commands/raw' topic.
+        subscription_wx_alerts (Subscription): Subscription to the '/environment/weather/alerts' topic.
+        subscription_node_list (Subscription): Subscription to the '/nodes/list' topic.
+        subscription_lighting_status (Subscription): Subscription to the '/lighting/status' topic.
+        publisher_events (Publisher): Publisher for the '/home/events' topic.
+        period_name (str): Name of the current period.
+        timer_period (float): Timer period in seconds.
+        timer (Timer): Timer to trigger periodic callbacks.
+        i (int): Counter for the timer callback.
+        dev_index (int): Index for device events.
+        event_index (int): Index for events.
+        publisher_devices (Publisher): Publisher for the '/devices/known/network' topic.
+        wx_latest_conditions (dict): Dictionary to store the latest weather conditions.
+        wx_recent_forecasts (dict): Dictionary to store recent weather forecasts.
+        lights (list): List to store light information.
+        num_lights_on (int): Number of lights that are currently on.
+    Methods:
+        __init__(): Initializes the EventDetector node and sets up subscriptions and publishers.
+        timer_callback(): Callback function for the timer to periodically prune the forecast list.
+        prune_forecast_list(): Prunes the forecast list by removing expired forecasts.
+        json_commands_callback(msg): Callback function to handle incoming JSON commands.
+        raw_commands_callback(msg): Callback function to handle incoming raw commands.
+        parse_command(argv): Parses and processes incoming commands.
+        publish_event(typename, severity, desc, detail): Publishes an event with the given details.
+        publish_known_devices(): Publishes the list of known devices.
+        devices_callback(msg): Callback function to handle incoming device discovery messages.
+        owntracks_callback(msg): Callback function to handle incoming OwnTracks messages.
+        sun_callback(msg): Callback function to handle incoming sun status messages.
+        scene_callback(msg): Callback function to handle incoming scene messages.
+        forecast_callback(msg): Callback function to handle incoming weather forecast messages.
+        add_forecast(forecast): Adds a new forecast to the forecast list.
+        publish_forecast_event(forecast): Publishes a forecast event.
+        publish_forecast_summary_event(): Publishes a summary of the forecast events.
+        conditions_callback(msg): Callback function to handle incoming weather conditions messages.
+        wx_alerts_callback(msg): Callback function to handle incoming weather alerts messages.
+        node_list_callback(msg): Callback function to handle incoming node list messages.
+        lighting_status_callback(msg): Callback function to handle incoming lighting status messages.
+        detect_device_event(): Detects and handles device events based on the current and known devices.
+    """
+    
 
+    # Initialize the EventDetector node
     def __init__(self):
         super().__init__('home_event_detect')
         self.lighting_status={}
@@ -112,11 +168,17 @@ class EventDetector(Node):
 
 
     def timer_callback(self):
+        """
+        Callback function for the timer to periodically prune the forecast list.
+        """
         self.i += 1
         self.prune_forecast_list()
 
 
     def prune_forecast_list(self):
+        """
+        Prunes the forecast list by removing expired forecasts.
+        """
         now = datetime.datetime.now().isoformat()
         f_len = len(self.forecasts)
         if f_len < 2:
@@ -136,6 +198,10 @@ class EventDetector(Node):
 
 
     def json_commands_callback(self,msg):
+        """
+        Callback function to handle incoming JSON commands.
+        Parses the JSON message and processes the command payload.
+        """
         m = json.loads(msg.data)
         # self.device_interval = m['interval']
         command = m['payload']
@@ -147,12 +213,19 @@ class EventDetector(Node):
 
 
     def raw_commands_callback(self,msg):
+        """
+        Callback function to handle incoming raw commands.
+        Parses the raw message and processes the command payload.
+        """
         command = msg.data
         argv=command.split()
         self.parse_command(argv)
 
 
     def parse_command(self,argv):
+        """
+        Parses and processes incoming commands.
+        """
         cmd_str = " ".join(argv)
         self.get_logger().info(f"Got command: '{cmd_str}'")
         # FIXME: this is not a very functional command shell
@@ -165,6 +238,9 @@ class EventDetector(Node):
 
 
     def publish_event(self, typename, severity, desc, detail):
+        """
+        Publishes an event with the given details.
+        """
         msg = String()
         event = {}
         event['event_type'] = typename
@@ -188,6 +264,9 @@ class EventDetector(Node):
 
 
     def publish_known_devices(self):
+        """
+        Publishes the list of known devices.
+        """     
         msg = String()
         msgdict = {}
         msgdict['index'] = self.i
@@ -199,6 +278,9 @@ class EventDetector(Node):
 
 
     def devices_callback(self, msg):
+        """
+        Callback function to handle incoming device discovery messages.
+        """
         m = json.loads(msg.data)
         self.device_interval = m['interval']
         self.new_devices = m['payload']
@@ -208,6 +290,9 @@ class EventDetector(Node):
 
 
     def owntracks_callback(self, msg):
+        """
+        Callback function to handle incoming OwnTracks messages.
+        """
         self.get_logger().info('Owntracks: "%s"' % msg.data)
         md = json.loads(msg.data)
         track = md['payload']
@@ -216,6 +301,9 @@ class EventDetector(Node):
 
 
     def sun_callback(self, msg):
+        """
+        Callback function to handle incoming sun status messages.
+        """ 
         m = json.loads(msg.data)
         max_sec = m['interval']
         sun = m['payload']
@@ -229,6 +317,9 @@ class EventDetector(Node):
 
 
     def scene_callback(self, msg):
+        """
+        Callback function to handle incoming scene messages.
+        """
         m = json.loads(msg.data)
         max_sec = m['interval']
         scene = m['payload']
@@ -241,7 +332,10 @@ class EventDetector(Node):
             self.publish_event('SCENE','INFO','%s'% scenename,scene)
 
 
-    def forecast_callback(self, msg): 
+    def forecast_callback(self, msg):
+        """
+        Callback function to handle incoming weather forecast messages.
+        """  
         m = json.loads(msg.data)
         wx = m['payload']  # a list of forecast dicts
         num_forecasts = len(self.forecasts)
@@ -258,6 +352,9 @@ class EventDetector(Node):
 
 
     def add_forecast(self,forecast:dict):
+        """
+        Adds a new forecast to the forecast list.
+        """
         expiry_timestamp = forecast['endTime']
         if len(self.forecasts) == 0:
             self.get_logger().warning(f"First new forecast: {forecast["name"]} - {forecast["shortForecast"]}.")
@@ -284,10 +381,16 @@ class EventDetector(Node):
 
 
     def publish_forecast_event(self, forecast):
+        """
+        Publishes a forecast event.
+        """
         self.publish_event('FORECAST','INFO', f"{forecast['name']} - {forecast['detailedForecast']}", forecast) 
     
 
     def publish_forecast_summary_event(self):
+        """
+        Publishes a summary of the forecast events.
+        """
         if len(self.forecasts) == 2:
             self.publish_forecast_event(self.forecasts[0][1])
             self.publish_forecast_event(self.forecasts[1][1])
@@ -302,6 +405,9 @@ class EventDetector(Node):
 
 
     def conditions_callback(self, msg):
+        """
+        Callback function to handle incoming weather conditions messages.
+        """
         m = json.loads(msg.data)
         wx = m['payload']
         station_id = wx['id']
@@ -317,6 +423,9 @@ class EventDetector(Node):
 
 
     def wx_alerts_callback(self, msg):
+        """
+        Callback function to handle incoming weather alerts messages.
+        """
         m = json.loads(msg.data)
         wx = m['payload']
         #self.publish_event('WEATHER','INFO','NEW ALERT: %s - %.1fF'% (wx['textDescription'],wx['temperature']['value']*9/5+32),wx)
@@ -324,6 +433,9 @@ class EventDetector(Node):
 
 
     def node_list_callback(self,msg):
+        """
+        Callback function to handle incoming node list messages.
+        """
         m = json.loads(msg.data)
         node_list = m['payload']
         # add new nodes
@@ -346,6 +458,9 @@ class EventDetector(Node):
 
 
     def lighting_status_callback(self,msg):
+        """
+        Callback function to handle incoming lighting status messages.
+        """
         m = json.loads(msg.data)         
         new_count = 0
         change_count = 0
@@ -406,6 +521,9 @@ class EventDetector(Node):
 
         
     def detect_device_event(self):
+        """
+        Detects and handles device events based on the current and known devices.
+        """
         known_len = len(self.known_devices)
         new_len = len(self.new_devices)
         if known_len == 0:
@@ -436,16 +554,19 @@ class EventDetector(Node):
         # share the master list        
         self.publish_known_devices()
 
+
+# Main entry point
 def main(args=None):
+    # Initialize the ROS node
     rclpy.init(args=args)
-
+    # Create the EventDetector node
     home_event_detect = EventDetector()
-
+    # Spin the node
     rclpy.spin(home_event_detect)
-
+    # Destroy the node   
     home_event_detect.destroy_node()
     rclpy.shutdown()
 
-
+# Main entry point
 if __name__ == '__main__':
     main()
