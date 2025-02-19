@@ -1,4 +1,4 @@
-#  Copyright 2022 Matthew Grund
+#  Copyright 2025 Matthew Grund
 #
 #  Licensed under the BSD 2 Clause license;
 #  you may not use this file except in compliance with the License.
@@ -11,10 +11,20 @@ import json
 import requests
 
 class YamahaDevice(Node):
-    #
-    #  single instance tracks multiple yamaha amplifiers
-    #
+    """
+    This class is a ROS2 node that interfaces with Yamaha AV receivers.  It listens for configuration messages
+    and network device messages, and polls the Yamaha devices for status and playback information.  It publishes
+    status messages to the /media/status topic.
+    """
+
+
+    #  Constructor
     def __init__(self):
+        """
+        Constructor for the YamahaDevice class.  This class is a ROS2 node that interfaces with Yamaha AV receivers.
+        It listens for configuration messages and network device messages, and polls the Yamaha devices for status and
+        playback information.  It publishes status messages to the /media/status topic.
+        """
         super().__init__('yamaha_device')
         self.publisher_status = self.create_publisher(String, '/media/status', 10)
         self.poll_timer_period = 1  # seconds
@@ -44,7 +54,11 @@ class YamahaDevice(Node):
             self.devices_callback,10)
 
     
+    #  Timer callback
     def poll_timer_callback(self):
+        """
+        This function is called by the ROS2 timer.  It polls the Yamaha devices for status and playback information.
+        """
         # we don't have any configuration updates yet
         if self.do_need_device_msg and self.do_need_config_msg:
             return
@@ -97,6 +111,10 @@ class YamahaDevice(Node):
         
 
     def config_callback(self,msg):
+        """
+        This function is called when a configuration message is received.  It parses the message and updates the
+        Yamaha device configuration.
+        """
         # parse a home configuration message
         msg = json.loads(msg.data)
         if msg['payload']['type'] == "YAMAHA":
@@ -118,12 +136,16 @@ class YamahaDevice(Node):
             self.get_logger().warning(f"Yamaha: got config for {msg['payload']['type']}' - ignoring")    
         return 
        
+
+    #  Command callback - not used         
     def command_callback(self,msg):
         return 
            
+    #  Event callback - not used       
     def event_callback(self,msg):
         return 
     
+    #  Devices callback
     def devices_callback(self,msg):
         #
         #   Parses a network devices message, typically written to /devices/known/network by net_discover.py
@@ -138,7 +160,11 @@ class YamahaDevice(Node):
                     self.get_logger().info(f"Yamaha: new device {dev['name']} found. ip = {dev['ip']}")
 
 
+    #  Utility functions
     def is_ip_address(self,addr:String):
+        """
+        This function checks if a string is a valid IP address.
+        """
         toks = addr.split(".")
         if len(toks) != 4:
             return False
@@ -147,17 +173,23 @@ class YamahaDevice(Node):
                 return False
         return True
 
-          
+
+#  Main function      
 def main(args=None):
+    #  Initialize the ROS2 node
     rclpy.init(args=args)
 
+    #  Create the YamahaDevice object
     yamaha_device = YamahaDevice()
 
+    #  Spin the node
     rclpy.spin(yamaha_device)
 
+    #  Destroy the node
     yamaha_device.destroy_node()
     rclpy.shutdown()
 
 
+#  Main function call
 if __name__ == '__main__':
     main()
