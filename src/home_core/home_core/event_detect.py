@@ -12,6 +12,7 @@ from rclpy.node import Node
 from std_msgs.msg import String
 import json
 import datetime
+import re
 
 class EventDetector(Node):
     """
@@ -78,6 +79,7 @@ class EventDetector(Node):
         self.known_devices=[]
         self.known_nodes={}
         self.forecasts=[]
+        self.sun_summary = ""
         self.subscription_devices = self.create_subscription(
             String,
             '/devices/discovered/network',
@@ -310,10 +312,22 @@ class EventDetector(Node):
         #if m['index'] == 0:
         #    self.publish_event('/environment/sun','ERROR','Sun tracker node restarted',sun)
         rem_hours = sun['secs_remaining'] / 3600.0
-        event = sun['next_event']    
-        self.get_logger().info('Sun: %.1f hours until %s' % (rem_hours,event))
-        if sun['secs_remaining'] <= max_sec:
-            self.publish_event('SUN','INFO','%s'% event,sun)
+        event1 = sun['next_event']
+        # convert from camel case to spaces
+        event = re.sub(r'([a-z])([A-Z])', r'\1 \2', event1).title()
+        summary = f"Sun: {rem_hours:.1f} hours until {event}"
+        self.get_logger().info(summary)
+        if self.num_string_differences(summary,self.sun_summary) > 1:
+            self.publish_event('SUN','INFO',summary,sun)
+        self.sun_summary = summary
+
+
+    def num_string_differences(self, s1, s2):
+        """
+        Returns the number of differences between two strings.
+        """
+        count = sum(1 for a, b in zip(s1, s2) if a != b) + abs(len(s1) - len(s2))
+        return count
 
 
     def scene_callback(self, msg):
