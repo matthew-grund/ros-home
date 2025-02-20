@@ -247,7 +247,7 @@ class EventDetector(Node):
         event = {}
         event['event_type'] = typename
         event['severity'] = severity
-        event['timestamp'] = datetime.datetime.utcnow().isoformat()
+        event['timestamp'] = datetime.datetime.now().isoformat()
         event['description'] = desc
         event['detail'] = detail
         m = {}
@@ -258,10 +258,8 @@ class EventDetector(Node):
         self.publisher_events.publish(msg)
         if severity=='ERROR':
             self.get_logger().error(desc)
-        elif severity=='WARNING':
-            self.get_logger().warn(desc)
         else:
-            self.get_logger().info(desc)
+            self.get_logger().warning(desc)
         self.event_index += 1    
 
 
@@ -311,13 +309,20 @@ class EventDetector(Node):
         sun = m['payload']
         #if m['index'] == 0:
         #    self.publish_event('/environment/sun','ERROR','Sun tracker node restarted',sun)
-        rem_hours = sun['secs_remaining'] / 3600.0
+        rem_sec = sun['secs_remaining']
+        rem_hours = rem_sec / 3600.0
         event1 = sun['next_event']
         # convert from camel case to spaces
         event = re.sub(r'([a-z])([A-Z])', r'\1 \2', event1).title()
+        hours_str = f"{rem_hours:.1f}"
+        if rem_sec < max_sec:
+            self.publish_event('SUN','INFO',event.upper(),sun)
+
         summary = f"Sun: {rem_hours:.1f} hours until {event}"
-        self.get_logger().info(summary)
-        if self.num_string_differences(summary,self.sun_summary) > 1:
+        diffs = self.num_string_differences(summary,self.sun_summary)
+        if diffs > 7: # either startup, or transition to next event
+            self.get_logger().warning(summary)
+        elif diffs > 1:  # hourly update
             self.publish_event('SUN','INFO',summary,sun)
         self.sun_summary = summary
 

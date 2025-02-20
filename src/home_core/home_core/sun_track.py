@@ -15,7 +15,10 @@ from astral.sun import golden_hour
 from astral.sun import SunDirection
 
 class SunTracker(Node):
-
+    """
+    This class is a ROS2 node that tracks the sun's position and publishes the next sun event to the /environment/sun topic.
+    """
+    
     def __init__(self):
         super().__init__('sun_tracker')
         self.publisher_ = self.create_publisher(String, '/environment/sun', 10)
@@ -30,6 +33,7 @@ class SunTracker(Node):
         self.i = 0
         self.sun_data = {}
         self.need_config_location = True
+
 
     def timer_callback(self):
         if self.need_config_location:
@@ -51,6 +55,7 @@ class SunTracker(Node):
         self.publisher_.publish(msg)
         self.get_logger().info('Sun: "%s"' % msg.data)
         self.i += 1
+
 
     def update_sun_track(self):
         
