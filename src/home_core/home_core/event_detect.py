@@ -374,6 +374,7 @@ class EventDetector(Node):
         """
         Adds a new forecast to the forecast list.
         """
+        now = datetime.datetime.now().isoformat()
         expiry_timestamp = forecast['endTime']
         if len(self.forecasts) == 0:
             self.get_logger().warning(f"First new forecast: {forecast["name"]} - {forecast["shortForecast"]}.")
@@ -390,9 +391,12 @@ class EventDetector(Node):
                 else:
                     new_forecasts.append(f_tuple)
             if not got_it:
-                self.getlogger().warning(f"Forecast for {forecast["name"]} was missing, added.")
-                new_forecasts.append([expiry_timestamp,forecast])
-                new_forecasts.sort()
+                if expiry_timestamp > now:
+                    self.get_logger().warning(f"Forecast for {forecast["name"]} was missing, added.")
+                    new_forecasts.append([expiry_timestamp,forecast])
+                    new_forecasts.sort()
+                else:
+                    self.get_logger().warning(f"Forecast for {forecast["name"]} is expired, not added.")
             self.forecasts = new_forecasts
         else: # newer in time than any forecast we've got
             self.forecasts.append([expiry_timestamp,forecast])
